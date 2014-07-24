@@ -6,6 +6,7 @@
     var BrkPokerApp = angular.module('brkPokerApp', ['ui.bootstrap']);
 
     BrkPokerApp.controller('MainController', function($scope) {
+        $scope.name = "Guest" + (Math.floor(Math.random() * 90000) + 10000);
         $scope.table_info = {
             chips: 0,
             name: "T001",
@@ -61,6 +62,10 @@
         console.log("player: "+$scope.p1.num);
         console.log("name: "+$scope.p1.name);
         
+//        $scope.btnSit = function(num) {
+//            console.log("Sitting at table " + num);
+//        }
+        
         function createPlayerPanel(num) {
             var tbl_info = {
                 "num": num,
@@ -76,7 +81,10 @@
                 is_smallblind: false,
                 is_bigblind: false,
                 is_loading: false,
-                sclass: "player_box col-md-2"
+                sclass: "player_box col-md-2",
+                btnSit: function(num) {
+                    console.log("Sitting at table + "+num);
+                }
             };
             switch(num) {
                 case 8:

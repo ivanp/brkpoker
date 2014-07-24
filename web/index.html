@@ -30,9 +30,14 @@
 
                         </ul>
 
-                        <button type="button" class="btn btn-success navbar-btn btn-sm">Buy In</button>
-                        <button type="button" class="btn btn-success navbar-btn btn-sm">Stand Up</button>
-                        <button type="button" class="btn btn-success navbar-btn btn-sm">Lobby</button>
+                        <form class="navbar-form navbar-left" role="search">
+  <div class="form-group">
+    <input type="text" class="form-control input-sm " placeholder="Name" ng-model="name">
+  </div>
+  <button type="button" class="btn btn-default btn-success btn-sm" ng-show="false">Buy In</button>
+  <button type="button" class="btn btn-default btn-success btn-sm"  ng-show="false">Stand Up</button>
+                        <button type="button" class="btn btn-default btn-success btn-sm"  ng-show="false">Lobby</button>
+</form>
 
                         <p class="navbar-text navbar-right">
                             <span class="badge">Chips: <span id="chips">{{table_info.chips|number}}</span></span>
@@ -110,18 +115,22 @@
         <nav class="navbar navbar-fixed-bottom" role="navigation">
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-md-3"><div class="well">...</div></div>
+                    <div class="col-md-3">
+                    <!-- @TODO: Logging -->
+                    </div>
                     <div class="col-md-6 text-center">
                         <div class="row">
                             <div id="message" class="alert" role="alert">Please take a seat</div>
                         </div>
                         <div id="action_buttons" class="row">
-                            <button class="player_join btn btn-success" ng-click="bet()">Bet</button>
-                            <button class="player_join btn btn-success" ng-click="bRaise()">Raise {{raiseAmount|number}}</button>
-                            <button class="player_join btn btn-success" ng-click="bCheck()">Check</button>
+                            <button class="btn btn-success" ng-click="bet()">Bet</button>
+                            <button class="btn btn-success" ng-click="bRaise()">Raise {{raiseAmount|number}}</button>
+                            <button class="btn btn-success" ng-click="bCheck()">Check</button>
                         </div>
                     </div>
-                    <div class="col-md-3"><div class="well">...</div></div>
+                    <div class="col-md-3">
+                    <!-- @TODO: Chat -->
+                    </div>
                 </div>
             </div>
         </nav>
