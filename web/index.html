@@ -51,9 +51,9 @@
         <div class="site-wrapper">
             <div class="site-wrapper-inner">
                 <div class="cover-container">
-                    <div class="inner cover">
+                    <div class="inner cover" ng-controller="PlayerPanelController">
 
-                        <div class="row" ng-controller="PlayerPanelController">
+                        <div class="row">
                             
                             <player-panel num="p8"></player-panel>
                             <player-panel num="p9"></player-panel>
@@ -64,7 +64,7 @@
                         <br/>
                         <div id="board_panel" class="row" ng-controller="BoardPanelController">
 
-                            <div class="col-md-2 col-md-offset-2">
+                            <div class="col-md-2 col-md-offset-3">
 
                                 <div class="input-group">
                                     <span class="input-group-addon">Bet</span>
@@ -81,14 +81,14 @@
 
                             </div>
 
-                            <div id="community_cards" class="col-md-4 col-md-offset-0">
+                            <div id="community_cards" class="col-md-5 col-md-offset-0">
                                 <span ng-repeat="card in cards track by $index">
                                     <img ng-src="img/cards/card_{{getCardIndex(card)}}.png"/>
                                 </span>
                             </div>
                         </div>
                         <br/>
-                        <div class="row" ng-controller="PlayerPanelController">
+                        <div class="row">
                             
                             <player-panel num="p7"></player-panel>
                             <player-panel num="p6"></player-panel>

@@ -65,14 +65,17 @@
             var tbl_info = {
                 "num": num,
                 name: "Player "+num,
+                avatar: "",
                 cash: 0,
                 action: "",
                 bet: 0,
                 card1: null,
                 card2: null,
+                seated: false,
                 is_dealer: false,
                 is_smallblind: false,
                 is_bigblind: false,
+                is_loading: false,
                 sclass: "player_box col-md-2"
             };
             switch(num) {
