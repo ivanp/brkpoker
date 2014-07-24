@@ -1,95 +1,130 @@
 <html lang="en" ng-app="brkPokerApp">
-<head>
-    <meta charset="utf-8">
-    
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.min.js"></script>
-    
-    <script src="js/ui-bootstrap-tpls-0.11.0.js"></script>
-    
-    
-    
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"/>
-    <link href="css/main.css" rel="stylesheet"/>
+    <head>
+        <meta charset="utf-8">
 
-</head>
-<body ng-controller="MainController">
-<header class="navbar navbar-inverse navbar-default navbar-fixed-top">
-    <div class="navbar-inner">
-        <div class="container">
-            
-            
-            
-            <nav class="hidden-xs " role="navigation">
-        
-        
-        
-                <ul class="nav navbar-nav">
-                    <a href="#top" role="button" class="navbar-brand">
-                        BRK Poker
-                    </a>
-                    
-                </ul>
-                
-          <button type="button" class="btn btn-success navbar-btn btn-sm">Buy In</button>
-                    <button type="button" class="btn btn-success navbar-btn btn-sm">Stand Up</button>
-                    <button type="button" class="btn btn-success navbar-btn btn-sm">Lobby</button>
-                
-                <p class="navbar-text navbar-right">
-                    <span class="badge">Chips: <span id="chips">{{table_info.chips|number}}</span></span>
-                    <span class="badge">Table: {{table_info.name}}</span>
-                    <span class="badge">Min/Max: {{table_info.min|number}}/{{table_info.max|number}}</span>
-                    <span class="badge">Small/Big: {{table_info.small|number}}/{{table_info.big|number}}</span>
-                    
-                </p>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.min.js"></script>
 
-            </nav>
-        </div>
-    </div>
-</header>
-    
-    
-<div class="site-wrapper">
-
-      <div class="site-wrapper-inner">
-
-        <div class="cover-container">
+        <script src="js/ui-bootstrap-tpls-0.11.0.js"></script>
 
 
-          <div class="inner cover">
-            <h1 class="cover-heading">Cover your page.</h1>
-            <p class="lead">Cover is a one-page template for building simple and beautiful home pages. Download, edit the text, and add your own fullscreen background photo to make it your own.</p>
-            <p class="lead">
-              <a href="#" class="btn btn-lg btn-default">Learn more</a>
-            </p>
-            
-            
-          </div>
 
-        </div>
+        <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"/>
+        <link href="css/main.css" rel="stylesheet"/>
 
-      </div>
+    </head>
+    <body ng-controller="MainController">
+        <header class="navbar navbar-inverse navbar-default navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
 
-    </div>
-    
-    
-<nav class="navbar navbar-fixed-bottom" role="navigation">
-  <div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3"><div class="well">...</div></div>
-        <div class="col-md-6 text-center">
-            <div class="row">
-                <div id="message" class="alert" role="alert">Please take a seat</div>
+
+
+                    <nav class="hidden-xs " role="navigation">
+
+
+
+                        <ul class="nav navbar-nav">
+                            <a href="#top" role="button" class="navbar-brand">
+                                BRK Poker
+                            </a>
+
+                        </ul>
+
+                        <button type="button" class="btn btn-success navbar-btn btn-sm">Buy In</button>
+                        <button type="button" class="btn btn-success navbar-btn btn-sm">Stand Up</button>
+                        <button type="button" class="btn btn-success navbar-btn btn-sm">Lobby</button>
+
+                        <p class="navbar-text navbar-right">
+                            <span class="badge">Chips: <span id="chips">{{table_info.chips|number}}</span></span>
+                            <span class="badge">Table: {{table_info.name}}</span>
+                            <span class="badge">Min/Max: {{table_info.min|number}}/{{table_info.max|number}}</span>
+                            <span class="badge">Small/Big: {{table_info.small|number}}/{{table_info.big|number}}</span>
+
+                        </p>
+
+                    </nav>
+                </div>
             </div>
-            <div id="action_buttons" class="row">
-                <button class="player_join btn btn-success" ng-click="bet()">Bet</button>
-                <button class="player_join btn btn-success" ng-click="bRaise()">Raise {{raiseAmount|number}}</button>
-                <button class="player_join btn btn-success" ng-click="bCheck()">Check</button>
+        </header>
+
+
+        <div class="site-wrapper">
+            <div class="site-wrapper-inner">
+                <div class="cover-container">
+                    <div class="inner cover">
+
+                        <div class="row" ng-controller="PlayerPanelController">
+                            
+                            <player-panel num="p8"></player-panel>
+                            <player-panel num="p9"></player-panel>
+                            <player-panel num="p1"></player-panel>
+                            <player-panel num="p2"></player-panel>
+                            
+                        </div>
+                        <br/>
+                        <div id="board_panel" class="row" ng-controller="BoardPanelController">
+
+                            <div class="col-md-2 col-md-offset-2">
+
+                                <div class="input-group">
+                                    <span class="input-group-addon">Bet</span>
+                                    <input type="text" class="form-control text-right" readonly ng-model="bet">
+                                </div>
+                                <br/>
+                                <div class="input-group">
+                                    <span class="input-group-addon">Pot</span>
+
+                                    <input type="text" class="form-control text-right" readonly ng-model="pot">
+                                </div>
+
+
+
+                            </div>
+
+                            <div id="community_cards" class="col-md-4 col-md-offset-0">
+                                <span ng-repeat="card in cards track by $index">
+                                    <img ng-src="img/cards/card_{{getCardIndex(card)}}.png"/>
+                                </span>
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="row" ng-controller="PlayerPanelController">
+                            
+                            <player-panel num="p7"></player-panel>
+                            <player-panel num="p6"></player-panel>
+                            <player-panel num="p5"></player-panel>
+                            <player-panel num="p4"></player-panel>
+                            <player-panel num="p3"></player-panel>
+                            
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
+
         </div>
-        <div class="col-md-3"><div class="well">...</div></div>
-    </div>
-  </div>
-</nav>
-<script src="js/app.js"></script>
-</body>
+
+
+        <nav class="navbar navbar-fixed-bottom" role="navigation">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-3"><div class="well">...</div></div>
+                    <div class="col-md-6 text-center">
+                        <div class="row">
+                            <div id="message" class="alert" role="alert">Please take a seat</div>
+                        </div>
+                        <div id="action_buttons" class="row">
+                            <button class="player_join btn btn-success" ng-click="bet()">Bet</button>
+                            <button class="player_join btn btn-success" ng-click="bRaise()">Raise {{raiseAmount|number}}</button>
+                            <button class="player_join btn btn-success" ng-click="bCheck()">Check</button>
+                        </div>
+                    </div>
+                    <div class="col-md-3"><div class="well">...</div></div>
+                </div>
+            </div>
+        </nav>
+        <script src="js/app.js"></script>
+    </body>
 </html>
