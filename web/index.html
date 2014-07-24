@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+        
+        <title>Demo BRKPoker</title>
+
+        <link href="bootstrap.css" rel="stylesheet">
+
+	<style>
+		body { 
+			padding:20px;
+		}
+		#console { 
+			height: 400px; 
+			overflow: auto; 
+		}
+		.username-msg {color:orange;}
+		.connect-msg {color:green;}
+		.disconnect-msg {color:red;}
+		.send-msg {color:#888}
+	</style>
+
+
+	<script src="js/socket.io/socket.io.js"></script>
+        
+        <!--<script src="//cdn.socket.io/socket.io-1.0.6.js"></script>-->
+        <!--<script src="socket.io/socket.io.js"></script>-->
+        <script src="js/moment.min.js"></script>
+        <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+        <script src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
+	
+	<script>
+            
+            document.cookie="name=John Doe; expires=Thu, 18 Dec 2014 12:00:00 GMT; path=/";
+            
+            console.log("Connecting");
+//            var socket = io('//' + window.location.host + '?authid=abc');
+//            
+//            
+//            socket.on('connect', function(data){
+//                console.log("Connected");
+////                socket.on('event', function(data){});
+////                socket.on('disconnect', function(){
+////                    console.log("Disconnected");
+////                });
+//            });
+//            
+//            socket.on('new message', function(data) {
+//               console.log("Got new message:");
+//               console.log(data);
+//            });
+//            
+//            console.log("Initialized");
+
+//                var userName = 'user' + Math.floor((Math.random()*1000)+1);
+//
+		var socket =  io.connect('//' + window.location.host + '?authid=abc');
+////                socket.
+//
+		socket.on('connect', function() {
+                    console.log('Connected!');
+                    socket.emit('get tables');
+//			output('<span class="connect-msg">Client has connected to the server!</span>');
+		});
+                
+                socket.on('new message', function(data) {
+                   console.log("Received new message:");
+                   console.log(data);
+                });
+                
+                socket.on('list tables', function(data) {
+                    console.log("Received list tables:");
+                    console.log(data);
+                });
+//		
+//		socket.on('message', function(data) {
+//			output('<span class="username-msg">' + data.userName + ':</span> ' + data.message);
+//		});
+//		
+//		socket.on('disconnect', function() {
+//			output('<span class="disconnect-msg">The client has disconnected!</span>');
+//		});
+//
+//                function sendDisconnect() {
+//                        socket.disconnect();
+//                }
+//		
+//		function sendMessage() {
+//                        var message = $('#msg').val();
+//                        $('#msg').val('');
+//                        
+//                        // don't forget to define type field '@class' 
+//                        // it should equals to class name which used 
+//                        // to deserialize object on server side
+//                        // via ...addJsonObjectListener() method
+//                        //
+//                        // TIP: you can customize type name field
+//                        // via Configuration.jsonTypeFieldName property
+//                        
+//                        var jsonObject = {'@class': 'com.corundumstudio.socketio.demo.ChatObject',
+//                                          userName: userName, 
+//                                          message: message};
+//                        socket.json.send(jsonObject);
+//		}
+//		
+//		function output(message) {
+//                        var currentTime = "<span class='time'>" +  moment().format('HH:mm:ss.SSS') + "</span>";
+//                        var element = $("<div>" + currentTime + " " + message + "</div>");
+//			$('#console').prepend(element);
+//		}
+		
+	</script>
+</head>
+
+<body>
+	
+	<h1>BRKPoker</h1>
+	
+	<br/>
+
+	<div id="console" class="well">
+	</div>
+
+        <form class="well form-inline" onsubmit="return false;">
+           <input id="msg" class="input-xlarge" type="text" placeholder="Type something..."/>
+           <button type="button" onClick="sendMessage()" class="btn">Send</button>
+           <button type="button" onClick="sendDisconnect()" class="btn">Disconnect</button>
+        </form>
+    
+
+	
+</body>
+
+</html>
