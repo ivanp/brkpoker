@@ -1,0 +1,71 @@
+html {
+  background: url(../img/table.png) no-repeat center bottom fixed; 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  min-width: 960px;
+  min-height: 540px;
+}
+
+body {
+    background:transparent;
+}
+
+#chips {
+    width: 64px;
+    text-align: right;
+    display: inline-block;
+}
+
+#message {
+    padding: 7px;
+    margin-bottom: 4px;
+    background-color: rgba(255,255,255,0.4);
+}
+
+#action_buttons button {
+    min-width: 96px;
+}
+
+
+
+
+
+/* Extra markup and styles for table-esque vertical and horizontal centering */
+.site-wrapper {
+  text-align: center;
+  display: table;
+  width: 100%;
+  height: 100%; /* For at least Firefox */
+  min-height: 100%;
+  -webkit-box-shadow: inset 0 0 100px rgba(0,0,0,.5);
+          box-shadow: inset 0 0 100px rgba(0,0,0,.5);
+}
+.site-wrapper-inner {
+vertical-align: middle;
+}
+.site-wrapper-inner {
+  display: table-cell;
+}
+.cover-container {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+/* Padding for spacing */
+.inner {
+  padding: 30px;
+}
+
+/*
+ * Cover
+ */
+
+.cover {
+  padding: 0 20px;
+}
+.cover .btn-lg {
+  padding: 10px 20px;
+  font-weight: bold;
+}

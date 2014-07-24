@@ -10,7 +10,7 @@ package com.brpoker.texasholdem.webobject;
  *
  * @author ivan
  */
-public class TableList
+public class ActionObject
 {
 	
 }
