@@ -50,6 +50,13 @@ div.player_box {
     opacity: 0.2; /* CSS3 */
 }
 
+.player_bg.turn {
+    background-color: #fff;
+    outline: none;
+    border-color: #fff;
+    box-shadow: 0 0 10px #fff;
+}
+
 .player_details {
     width: 155px;
     height: 130px;
@@ -68,6 +75,30 @@ div.player_box {
     padding: 4px;
     line-height: 18px;
     font-size: 13px;
+}
+
+.player_overlay {
+    width: 155px;
+    height: 130px;
+    position: absolute;
+    top:0;left:0;
+    padding: 4px;
+}
+
+.player_overlay.allin {
+    background: url('../img/action/action_allin.png') no-repeat center;
+}
+.player_overlay.bet {
+    background: url('../img/action/action_bet.png') no-repeat center;
+}
+.player_overlay.call {
+    background: url('../img/action/action_call.png') no-repeat center;
+}
+.player_overlay.check {
+    background: url('../img/action/action_check.png') no-repeat center;
+}
+.player_overlay.fold {
+    background: url('../img/action/action_fold.png') no-repeat center;
 }
 
 .player_join {
@@ -189,3 +220,15 @@ div.player_box {
 /* Ease Display */
 
 .pad { padding: 25px; }
+
+.player_details.bigblind {
+    background: url('../img/bigblindPuck.png') no-repeat 5px 85px;
+}
+
+.player_details.smallblind {
+    background: url('../img/smallblindPuck.png') no-repeat 5px 85px;
+}
+
+.player_details.dealer {
+    background: url('../img/dealerPuck.png') no-repeat 5px 85px;
+}

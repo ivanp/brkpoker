@@ -61,20 +61,11 @@
             big: 0
         };
         
-        $scope.p1 = createPlayerPanel(1);
-        $scope.p2 = createPlayerPanel(2);
-        $scope.p3 = createPlayerPanel(3);
-        $scope.p4 = createPlayerPanel(4);
-        $scope.p5 = createPlayerPanel(5);
-        $scope.p6 = createPlayerPanel(6);
-        $scope.p7 = createPlayerPanel(7);
-        $scope.p8 = createPlayerPanel(8);
-        $scope.p9 = createPlayerPanel(9);
-        console.log("Player panels initialized");
-        
-        $scope.btnActionSit = function(num) {
-            console.log("Sitting at table + "+num);
+        $scope.players = [];
+        for(var tbl_num = 1; tbl_num <= 9; tbl_num++) {
+            $scope.players.push(createPlayerPanel(tbl_num));
         }
+        console.log("Player panels initialized");
         
         function createPlayerPanel(num) {
             var tbl_info = {
@@ -86,14 +77,35 @@
                 bet: 0,
                 card1: null,
                 card2: null,
-                seated: false,
+                // Is it available to sit on?
+                is_available: true,
+                // Player clicked sit, waiting status 
+                // from server
+                is_loading: false,
+                // Player sit, but doesn't mean already playing,
+                // can be also waiting for his turn
+                is_seated: false,
+                // Player is currently on the game
+                is_playing: false,
+                // It's player turn
+                is_turn: false,
                 is_dealer: false,
                 is_smallblind: false,
                 is_bigblind: false,
-                is_loading: false,
+                is_winning: false,
+                last_action: "",
                 sclass: "player_box col-md-2"
-//                ,
-//                btnSit: $scope.btnSit
+                ,
+                sit: function() {
+                    console.log("Sitting at table + "+num);
+                    for (var idx in $scope.players) {
+                        var tbl = $scope.players[idx];
+                        if (tbl.num == num)
+                            tbl.is_loading = true;
+                        else
+                            tbl.is_available = false;
+                    }
+                }
             };
             switch(num) {
                 case 8:
@@ -201,8 +213,7 @@
         return {
             restrict: 'E',
             scope: {
-                playerInfo: '=num'
-                
+                player: '='
             },
             templateUrl: 'player_panel.html'
         };
@@ -238,9 +249,15 @@ setTimeout(function() {
 //    var appElement = document.querySelector('[ng-controller=PlayerPanelController]');
     var $scope = getControllerScope('MainController');
     $scope.$apply(function() {
-        $scope['p1'].seated = true;
-        $scope['p1'].card1 = 5;
-        $scope['p1'].card2 = 15;
+        $scope.players[0].is_seated = true;
+        $scope.players[0].is_playing = true;
+        $scope.players[0].is_turn = true;
+        $scope.players[0].card1 = 5;
+        $scope.players[0].card2 = 15;
+        $scope.players[0].is_smallblind = true;
+        $scope.players[0].last_action = 'allin';
+        
+//        $scope['p9'].is_available = false;
 //        $scope.p1.seated = true;
 //        $scope.p1.card1 = 5;
 //        $scope.p1.card2 = 51;
