@@ -4,13 +4,17 @@
  * and open the template in the editor.
  */
 
-package com.brpoker.texasholdem.webobject;
+package com.brkpoker.texasholdem.webobject;
 
 /**
  *
  * @author ivan
  */
-public class ActionObject
+public class PlayerObject
 {
-	
+	private String name;
+	private int cash;
+	private int bet;
+	private String action;
+	private String hand;
 }

@@ -4,15 +4,13 @@
  * and open the template in the editor.
  */
 
-package com.brpoker.texasholdem.webobject;
+package com.brkpoker.texasholdem.webobject;
 
 /**
  *
  * @author ivan
  */
-public class ChatMessageObject
+public class ControlPanelObject
 {
-	private String name;
-	private String message;
-	private int date;
+	
 }

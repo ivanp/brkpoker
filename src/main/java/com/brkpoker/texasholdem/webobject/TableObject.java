@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package com.brpoker.texasholdem.webobject;
+package com.brkpoker.texasholdem.webobject;
 
 /**
  *

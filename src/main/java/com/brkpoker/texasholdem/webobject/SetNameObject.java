@@ -4,17 +4,28 @@
  * and open the template in the editor.
  */
 
-package com.brpoker.texasholdem.webobject;
+package com.brkpoker.texasholdem.webobject;
 
 /**
  *
  * @author ivan
  */
-public class PlayerObject
+public class SetNameObject
 {
 	private String name;
-	private int cash;
-	private int bet;
-	private String action;
-	private String hand;
+	
+	public SetNameObject()
+	{
+		
+	}
+	
+	public String getName()
+	{
+		return name;
+	}
+	
+	public void setName(String name)
+	{
+		this.name = name;
+	}
 }

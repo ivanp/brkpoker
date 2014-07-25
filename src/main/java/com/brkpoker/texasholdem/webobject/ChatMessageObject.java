@@ -4,28 +4,15 @@
  * and open the template in the editor.
  */
 
-package com.brpoker.texasholdem.webobject;
+package com.brkpoker.texasholdem.webobject;
 
 /**
  *
  * @author ivan
  */
-public class SetNameObject
+public class ChatMessageObject
 {
 	private String name;
-	
-	public SetNameObject()
-	{
-		
-	}
-	
-	public String getName()
-	{
-		return name;
-	}
-	
-	public void setName(String name)
-	{
-		this.name = name;
-	}
+	private String message;
+	private int date;
 }
