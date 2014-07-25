@@ -5,8 +5,8 @@
         <div class="player_name" ng-bind="playerInfo.name"></div>
         <div class="player_coin" ng-bind="playerInfo.cash | number"></div>
         <div class="player_cards">
-            <img class="player_card_1" src="img/cards/card_back.png"/>
-            <img class="player_card_2" src="img/cards/card_back.png"/>
+            <card-image class="player_card_1" ng-card="{{playerInfo.card1}}"></card-image>
+            <card-image class="player_card_2" ng-card="{{playerInfo.card2}}"></card-image>
         </div>
         <div class="player_bet" ng-bind="playerInfo.bet | number"></div>
     </div>
