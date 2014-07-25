@@ -73,6 +73,30 @@ public class SocketService
 		client.sendEvent("list tables", table_names);
 	}
 	
+	/**
+	 * Spectating a table
+	 * @param client
+	 * @param data
+	 * @param ackRequest 
+	 */
+	@OnEvent("watch")
+	public void onWatchHandler(SocketIOClient client, String data, AckRequest ackRequest) 
+	{
+		
+	}
+	
+	/**
+	 * Play on a table given a seat number
+	 * @param client
+	 * @param data
+	 * @param ackRequest 
+	 */
+	@OnEvent("sit")
+	public void onSitHandler(SocketIOClient client, String data, AckRequest ackRequest) 
+	{
+		
+	}
+	
 	@OnEvent("chat")
 	public void onChatHandler(SocketIOClient client, String data, AckRequest ackRequest) 
 	{

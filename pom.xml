@@ -28,11 +28,6 @@
       <artifactId>netty-socketio</artifactId>
       <version>1.6.5</version>
     </dependency>
-    <dependency>
-      <groupId>org.ozsoft.texasholdem</groupId>
-      <artifactId>TexasHoldEm</artifactId>
-      <version>0.6-SNAPSHOT</version>
-    </dependency>
   </dependencies>
   
   <build>
