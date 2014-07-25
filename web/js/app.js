@@ -48,6 +48,10 @@
         $scope.is_connected = true;
         $scope.is_playing = false;
         
+        $scope.bet = 0;
+        $scope.pot = 0;
+        $scope.community_cards = [null, null, null, null, null];
+        
         $scope.table_info = {
             chips: 0,
             name: "",
@@ -56,6 +60,51 @@
             small: 0,
             big: 0
         };
+        
+        $scope.p1 = createPlayerPanel(1);
+        $scope.p2 = createPlayerPanel(2);
+        $scope.p3 = createPlayerPanel(3);
+        $scope.p4 = createPlayerPanel(4);
+        $scope.p5 = createPlayerPanel(5);
+        $scope.p6 = createPlayerPanel(6);
+        $scope.p7 = createPlayerPanel(7);
+        $scope.p8 = createPlayerPanel(8);
+        $scope.p9 = createPlayerPanel(9);
+        console.log("Player panels initialized");
+        
+        $scope.btnActionSit = function(num) {
+            console.log("Sitting at table + "+num);
+        }
+        
+        function createPlayerPanel(num) {
+            var tbl_info = {
+                "num": num,
+                name: "Player "+num,
+                avatar: "",
+                cash: 0,
+                action: "",
+                bet: 0,
+                card1: null,
+                card2: null,
+                seated: false,
+                is_dealer: false,
+                is_smallblind: false,
+                is_bigblind: false,
+                is_loading: false,
+                sclass: "player_box col-md-2"
+//                ,
+//                btnSit: $scope.btnSit
+            };
+            switch(num) {
+                case 8:
+                    tbl_info.sclass = tbl_info.sclass + " col-md-offset-2";
+                    break;
+                case 7:
+                    tbl_info.sclass = tbl_info.sclass + " col-md-offset-1";
+                    break;  
+            }
+            return tbl_info;
+        }
         
         // Default was hidden
         angular.element(document.querySelector('#header')).attr('style', '');
@@ -71,6 +120,13 @@
         $scope.imagesUploaded = 0;
         $scope.imagesStorage = [];
         $scope.loadImages = function() {
+            // Put all images here
+            var images = [
+                getCardImg(null),
+                'img/bigblindPuck.png',
+                'img/smallblindPuck.png',
+                'img/dealerPuck.png',
+            ];
             
             var bg_img = new Image();
             bg_img.onload = function() {
@@ -83,16 +139,17 @@
             bg_img.src = 'img/table.jpg';
             $scope.imagesStorage.push(bg_img);
             
-            var ph_img = new Image();
-            ph_img.src = getCardImg(null);
-            $scope.imagesStorage.push(ph_img);
-            
+            // Card pictures
             for (var card_idx = -1; card_idx < 52; card_idx++) {
+                images.push(getCardImg(card_idx));
+            }
+            
+            for (var img_src in images) {
                 var card_img = new Image();
                 card_img.onload = function() {
                     $scope.imagesUploaded++;
                 }
-                card_img.src = getCardImg(card_idx);
+                card_img.src = images[img_src];
                 $scope.imagesStorage.push(card_img);
             }
         }
@@ -140,63 +197,12 @@
         });
     });
 
-    BrkPokerApp.controller('BoardPanelController', function($scope, $timeout) {
-        $scope.bet = 0;
-        $scope.pot = 0;
-        $scope.cards = [null, null, null, null, null];
-
-        console.log("Board panel initialized");
-    });
-
-    BrkPokerApp.controller('PlayerPanelController', function($scope) {
-        $scope.p1 = createPlayerPanel(1);
-        $scope.p2 = createPlayerPanel(2);
-        $scope.p3 = createPlayerPanel(3);
-        $scope.p4 = createPlayerPanel(4);
-        $scope.p5 = createPlayerPanel(5);
-        $scope.p6 = createPlayerPanel(6);
-        $scope.p7 = createPlayerPanel(7);
-        $scope.p8 = createPlayerPanel(8);
-        $scope.p9 = createPlayerPanel(9);
-        console.log("Player panels initialized");
-        
-        function createPlayerPanel(num) {
-            var tbl_info = {
-                "num": num,
-                name: "Player "+num,
-                avatar: "",
-                cash: 0,
-                action: "",
-                bet: 0,
-                card1: null,
-                card2: null,
-                seated: false,
-                is_dealer: false,
-                is_smallblind: false,
-                is_bigblind: false,
-                is_loading: false,
-                sclass: "player_box col-md-2",
-                btnSit: function(num) {
-                    console.log("Sitting at table + "+num);
-                }
-            };
-            switch(num) {
-                case 8:
-                    tbl_info.sclass = tbl_info.sclass + " col-md-offset-2";
-                    break;
-                case 7:
-                    tbl_info.sclass = tbl_info.sclass + " col-md-offset-1";
-                    break;  
-            }
-            return tbl_info;
-        }
-    });
-
     BrkPokerApp.directive('playerPanel', function() {
         return {
             restrict: 'E',
             scope: {
                 playerInfo: '=num'
+                
             },
             templateUrl: 'player_panel.html'
         };
@@ -207,7 +213,7 @@
             restrict: 'AE',
             replace: true,
             scope: {
-                ngCard: '@'
+                ngCard: '='
             },
             template: '<img ng-src="{{ngCardImg}}"/>'
             ,
@@ -225,15 +231,23 @@
             }
         }
     });
-})();
-
-/* Control $scope from outside */
+    
+    
+    /* Control $scope from outside */
 setTimeout(function() {
-    var appElement = document.querySelector('[ng-controller=PlayerPanelController]');
-    var $scope = angular.element(appElement).scope();
+//    var appElement = document.querySelector('[ng-controller=PlayerPanelController]');
+    var $scope = getControllerScope('MainController');
     $scope.$apply(function() {
-        $scope.p1.seated = true;
-        $scope.p1.card1 = 5;
-        $scope.p1.card2 = 51;
+        $scope['p1'].seated = true;
+        $scope['p1'].card1 = 5;
+        $scope['p1'].card2 = 15;
+//        $scope.p1.seated = true;
+//        $scope.p1.card1 = 5;
+//        $scope.p1.card2 = 51;
     });
 }, 1000);
+
+
+})();
+
+

@@ -71,7 +71,7 @@
         <div class="site-wrapper">
             <div class="site-wrapper-inner">
                 <div class="cover-container">
-                    <div class="inner cover" ng-controller="PlayerPanelController">
+                    <div class="inner cover">
 
                         <div class="row">
                             
@@ -82,7 +82,7 @@
                             
                         </div>
                         <br/>
-                        <div id="board_panel" class="row" ng-controller="BoardPanelController">
+                        <div id="board_panel" class="row">
 
                             <div class="col-md-2 col-md-offset-3">
 
@@ -102,8 +102,8 @@
                             </div>
 
                             <div id="community_cards" class="col-md-5 col-md-offset-0">
-                                <span ng-repeat="card in cards track by $index">
-                                    <card-image ng-card="{{card}}"></card-image>
+                                <span ng-repeat="card in community_cards track by $index">
+                                    <card-image ng-card="card"></card-image>
                                 </span>
                             </div>
                             
