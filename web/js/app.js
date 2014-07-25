@@ -1,26 +1,89 @@
 (function() {
 
     'use strict';
+    
+    // Helpers
+    function getCardImg(card_int) {
+            var idx;
+        if (card_int == null)
+            idx = 'placeholder';
+        else if (card_int == -1)
+            idx = 'back';
+        else if (card_int.toString().length == 1)
+            idx = '0' + card_int.toString();
+        else
+            idx = card_int.toString();
+        return "img/cards/card_" + idx +".png";
+    };
+    
+    function getRootScope() {
+        return angular.element(document.querySelector('[ng-app=brkPokerApp]')).scope();
+    }
+    
+    function getControllerScope(ctrl) {
+        return angular.element(document.querySelector('[ng-controller='+ctrl+']')).scope();
+    }
 
-    // Your application goes here.
-    var BrkPokerApp = angular.module('brkPokerApp', ['ui.bootstrap']);
-
-    BrkPokerApp.controller('MainController', function($scope) {
-        $scope.name = "Guest" + (Math.floor(Math.random() * 90000) + 10000);
-        $scope.table_info = {
-            chips: 0,
-            name: "T001",
-            min: 4000,
-            max: 8000,
-            small: 200,
-            big: 400
+    // Initialize app
+    var BrkPokerApp = angular.module('brkPokerApp', ['ui.bootstrap', 'dialogs.main']);
+    
+    // Factories and services
+    BrkPokerApp.factory('getCardImg', function() {
+        return function(card_int) {
+            return getCardImg(card_int);
         };
     });
 
-    BrkPokerApp.controller('BoardPanelController', function($scope, $timeout) {
-        $scope.bet = 10;
-        $scope.pot = 20;
+    BrkPokerApp.controller('MainController', function($timeout, $scope, $rootScope, dialogs) {
+        /* Get this from session or URL query i guess */
+        $scope.authid = "";
+        // Generate guest name
+        $scope.name = "Guest" + (Math.floor(Math.random() * 90000) + 10000);
+        $scope.is_connected = false;
+        $scope.is_playing = false;
+        $scope.table_info = {
+            chips: 0,
+            name: "",
+            min: 0,
+            max: 0,
+            small: 0,
+            big: 0
+        };
+        
+        // Default was hidden
+        angular.element(document.querySelector('#header')).attr('style', '');
+        angular.element(document.querySelector('#content')).attr('style', '');
+        angular.element(document.querySelector('#footer')).attr('style', '');
+//        $timeout(function() {
+//            angular.element(document.querySelector('#content')).attr('style', '');
+//            $scope.is_connected = true;
+//            console.log('Showing');
+//        }, 2000);
+        
+        console.log("Main controller initialized");
+        
+        var dlg = dialogs.wait("Loading", "Loading assets", 5, {
+            backdrop: 'static'
+        });
+        
+        var imgs = [];
+        var img = new Image();
+        img.src = getCardImg(null);
+        for (var card_idx = -1; card_idx < 52; card_idx++) {
+            var card_img = new Image();
+            card_img.src = getCardImg(card_idx);
+            imgs.push(card_img);
+        }
+        console.log("Assets loaded");
+        
+        $timeout(function() {
+            getRootScope().$broadcast('dialogs.wait.progress',{'progress' : 30, 'msg': 'Connecting to server'});
+        }, 2000);
+    });
 
+    BrkPokerApp.controller('BoardPanelController', function($scope, $timeout) {
+        $scope.bet = 0;
+        $scope.pot = 0;
         $scope.cards = [null, null, null, null, null];
 
         $scope.getCardIndex = function(card) {
@@ -35,9 +98,15 @@
         }
 
 //        $timeout(function() {
-//            $scope.cards[0] = 3;
+//            $scope.cards[0] = 0;
+//            $scope.cards[1] = 32;
+//            $scope.cards[2] = 44;
+//            $scope.cards[3] = 12;
+//            $scope.cards[4] = 16;
 //            console.log('Changing card');
 //        }, 2000);
+
+        console.log("Board panel initialized");
     });
 
     BrkPokerApp.controller('ControlPanelController', function($scope) {
@@ -47,6 +116,8 @@
             cards: [],
             message: ""
         };
+        
+        console.log("Control panel initialized");
     });
 
     BrkPokerApp.controller('PlayerPanelController', function($scope) {
@@ -59,12 +130,7 @@
         $scope.p7 = createPlayerPanel(7);
         $scope.p8 = createPlayerPanel(8);
         $scope.p9 = createPlayerPanel(9);
-        console.log("player: "+$scope.p1.num);
-        console.log("name: "+$scope.p1.name);
-        
-//        $scope.btnSit = function(num) {
-//            console.log("Sitting at table " + num);
-//        }
+        console.log("Player panels initialized");
         
         function createPlayerPanel(num) {
             var tbl_info = {
@@ -107,4 +173,36 @@
             templateUrl: 'player_panel.html'
         };
     });
+    
+    BrkPokerApp.directive('cardImage', function() {
+        return {
+            restrict: 'AE',
+            scope: {
+                ngCard: '@'
+            },
+            template: '<img ng-src="{{ngCardImg}}"/>'
+            ,
+            controller: ['$scope', function($scope) {
+                    // Default
+                    $scope.ngCardImg = getCardImg(null);
+            }]
+            ,
+            "link": function(scope, elem, attrs, ctrl) {
+                scope.$watch('ngCard', function(newVal) {
+                    if (newVal) {
+                        scope.ngCardImg = getCardImg(scope.ngCard);
+                    }
+                });
+            }
+        }
+    });
 })();
+
+/* Control $scope from outside */
+//setTimeout(function() {
+//    var appElement = document.querySelector('[ng-controller=PlayerPanelController]');
+//    var $scope = angular.element(appElement).scope();
+//    $scope.$apply(function() {
+//        $scope.p1.seated = true;
+//    });
+//}, 3000);

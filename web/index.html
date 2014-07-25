@@ -2,24 +2,18 @@
     <head>
         <meta charset="utf-8">
 
-        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.min.js"></script>
-
-        <script src="js/ui-bootstrap-tpls-0.11.0.js"></script>
-
-
-
         <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"/>
         <link href="css/main.css" rel="stylesheet"/>
 
     </head>
     <body ng-controller="MainController">
-        <header class="navbar navbar-inverse navbar-default navbar-fixed-top">
+        <header id="header" class="navbar navbar-inverse navbar-default navbar-fixed-top" style="visibility: hidden">
             <div class="navbar-inner">
                 <div class="container">
 
 
 
-                    <nav class="hidden-xs " role="navigation">
+                    <nav role="navigation">
 
 
 
@@ -29,17 +23,17 @@
                             </a>
 
                         </ul>
-
                         <form class="navbar-form navbar-left" role="search">
   <div class="form-group">
-    <input type="text" class="form-control input-sm " placeholder="Name" ng-model="name">
+    
+    <input id="input_name" type="text" class="form-control input-sm " placeholder="Name" ng-model="name">
   </div>
   <button type="button" class="btn btn-default btn-success btn-sm" ng-show="false">Buy In</button>
   <button type="button" class="btn btn-default btn-success btn-sm"  ng-show="false">Stand Up</button>
                         <button type="button" class="btn btn-default btn-success btn-sm"  ng-show="false">Lobby</button>
 </form>
 
-                        <p class="navbar-text navbar-right">
+                        <p class="navbar-text navbar-right" ng-show="is_playing">
                             <span class="badge">Chips: <span id="chips">{{table_info.chips|number}}</span></span>
                             <span class="badge">Table: {{table_info.name}}</span>
                             <span class="badge">Min/Max: {{table_info.min|number}}/{{table_info.max|number}}</span>
@@ -52,7 +46,7 @@
             </div>
         </header>
 
-
+        <div id="content" ng-show="is_connected" style="visibility: hidden">
         <div class="site-wrapper">
             <div class="site-wrapper-inner">
                 <div class="cover-container">
@@ -88,8 +82,17 @@
 
                             <div id="community_cards" class="col-md-5 col-md-offset-0">
                                 <span ng-repeat="card in cards track by $index">
-                                    <img ng-src="img/cards/card_{{getCardIndex(card)}}.png"/>
+                                    <!--<img ng-src="img/cards/card_{{getCardIndex(card)}}.png"/>-->
+                                    <card-image ng-card="{{card}}"/>
                                 </span>
+                            </div>
+                            
+                            
+                        </div>
+                        <br/>
+                        <div class="row">
+                            <div class="col-md-6 col-md-offset-3">
+                                <div id="message" class="alert" role="alert">Please take a seat</div>
                             </div>
                         </div>
                         <br/>
@@ -112,17 +115,15 @@
         </div>
 
 
-        <nav class="navbar navbar-fixed-bottom" role="navigation">
+        <nav id="footer" class="navbar navbar-fixed-bottom" role="navigation"ng-show="is_connected" style="visibility: hidden">
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-md-3">
                     <!-- @TODO: Logging -->
                     </div>
                     <div class="col-md-6 text-center">
-                        <div class="row">
-                            <div id="message" class="alert" role="alert">Please take a seat</div>
-                        </div>
-                        <div id="action_buttons" class="row">
+                        
+                        <div id="action_buttons" class="row" ng-show="is_playing">
                             <button class="btn btn-success" ng-click="bet()">Bet</button>
                             <button class="btn btn-success" ng-click="bRaise()">Raise {{raiseAmount|number}}</button>
                             <button class="btn btn-success" ng-click="bCheck()">Check</button>
@@ -134,6 +135,13 @@
                 </div>
             </div>
         </nav>
+        </div>
+        
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.js"></script>
+        <script src="https://code.angularjs.org/1.2.16/angular-sanitize.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bower-angular-translate/2.0.1/angular-translate.min.js"></script>
+        <script src="js/ui-bootstrap-tpls-0.11.0.js"></script>
+        <script src="js/angular-dialog/dialogs.js"></script>
         <script src="js/app.js"></script>
     </body>
 </html>
