@@ -9,6 +9,7 @@ package com.brkpoker.texasholdem;
 import static com.brkpoker.texasholdem.App.TableCount;
 import static com.brkpoker.texasholdem.App.Tables;
 import static com.brkpoker.texasholdem.App.Users;
+import com.brkpoker.texasholdem.webobject.AuthObject;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.*;
@@ -32,7 +33,7 @@ public class SocketService
 		String authid = client.getHandshakeData().getSingleUrlParam("authid");
 		System.out.printf("authid: %s\n", authid);
 
-		client.sendEvent("new message", "Hello world");
+		client.sendEvent("auth", true);
 
 		User user = new User(client);
 		user.setName(String.format("user%d", Users.size()+1));
@@ -82,7 +83,7 @@ public class SocketService
 	@OnEvent("watch")
 	public void onWatchHandler(SocketIOClient client, String data, AckRequest ackRequest) 
 	{
-		
+		System.out.printf("Watching table: %s\n", data);
 	}
 	
 	/**
@@ -101,6 +102,15 @@ public class SocketService
 	public void onChatHandler(SocketIOClient client, String data, AckRequest ackRequest) 
 	{
 		System.out.println("Received request chat");
+		// @TODO: check if user is currently playing, nonspectator & spectator 
+		// are not allowed to chat
+		
+	}
+	
+	@OnEvent("auth")
+	public void onAuthHandler(SocketIOClient client, AuthObject data, AckRequest ackRequest) 
+	{
+		System.out.println("Received auth");
 		// @TODO: check if user is currently playing, nonspectator & spectator 
 		// are not allowed to chat
 		

@@ -28,7 +28,7 @@
         
         
         
-        <header id="header" class="navbar navbar-inverse navbar-default navbar-fixed-top" style="visibility: hidden">
+        <header id="header" class="navbar navbar-inverse navbar-default navbar-fixed-top" style="visibility: hidden" ng-show="is_connected && (is_playing || is_watching)">
             <div class="navbar-inner">
                 <div class="container">
 
@@ -67,7 +67,7 @@
             </div>
         </header>
 
-        <div id="content" ng-show="is_connected" style="visibility: hidden">
+        <div id="content" ng-show="is_connected && (is_playing || is_watching)" style="visibility: hidden">
         <div class="site-wrapper">
             <div class="site-wrapper-inner">
                 <div class="cover-container">
@@ -135,7 +135,7 @@
         </div>
 
 
-        <nav id="footer" class="navbar navbar-fixed-bottom" role="navigation"ng-show="is_connected" style="visibility: hidden">
+        <nav id="footer" class="navbar navbar-fixed-bottom" role="navigation" ng-show="is_connected && (is_playing || is_watching)" style="visibility: hidden">
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-md-3">
@@ -144,9 +144,12 @@
                     <div class="col-md-6 text-center">
                         
                         <div id="action_buttons" class="row" ng-show="is_playing">
-                            <button class="btn btn-success" ng-click="bet()">Bet</button>
-                            <button class="btn btn-success" ng-click="bRaise()">Raise {{raiseAmount|number}}</button>
-                            <button class="btn btn-success" ng-click="bCheck()">Check</button>
+                            <button class="btn btn-success" ng-click="actBtnCheck()" ng-show="isActionAllowed('check')">Check</button>
+                            <button class="btn btn-success" ng-click="actBtnCall()" ng-show="isActionAllowed('call')">Call</button>
+                            <button class="btn btn-success" ng-click="actBtnBet()" ng-show="isActionAllowed('bet')">Bet</button>
+                            <button class="btn btn-success" ng-click="actBtnRaise()" ng-show="isActionAllowed('raise')">Raise {{raiseAmount|number}}</button>
+                            <button class="btn btn-success" ng-click="actBtnFold()" ng-show="isActionAllowed('fold')">Fold</button>
+                            
                         </div>
                     </div>
                     <div class="col-md-3">
