@@ -9,20 +9,23 @@ package com.brkpoker.texasholdem;
 import com.corundumstudio.socketio.SocketIOClient;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
 import org.ozsoft.texasholdem.Card;
 import org.ozsoft.texasholdem.Player;
+import org.ozsoft.texasholdem.Table;
 import org.ozsoft.texasholdem.TableType;
 import org.ozsoft.texasholdem.actions.Action;
-import org.ozsoft.texasholdem.actions.ContinueAction;
 
 /**
  *
  * @author ivan
  */
-public class User implements org.ozsoft.texasholdem.Client
+public class User implements org.ozsoft.texasholdem.Client 
 {
 	private final SocketIOClient client;
 	private String name;
+	private Player player;
+	private int cash = 5000;
 	
 	public User(SocketIOClient client)
 	{
@@ -32,11 +35,35 @@ public class User implements org.ozsoft.texasholdem.Client
 	public void setName(String name)
 	{
 		this.name = name;
+		if (null != player)
+			player.setName(name);
 	}
 	
 	public String getName()
 	{
 		return name;
+	}
+	
+	public Player getPlayer()
+	{
+		return player;
+	}
+	
+	public Player joinTable(Table table, int seatNum, int buyin) throws NotEnoughCashException, AlreadyPlayingOnOtherTableException
+	{
+		if (buyin > cash)
+			throw new NotEnoughCashException();
+		else if (null != player)
+			throw new AlreadyPlayingOnOtherTableException();
+		cash -= buyin;
+		Player player = new Player(name, buyin, this);
+		
+		return player;
+	}
+	
+	public int getCash()
+	{
+		return cash;
 	}
 	
 	/**
@@ -47,7 +74,7 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void messageReceived(String message)
 	{
-		
+		client.sendEvent("msg", message);
 	}
 
     /**
@@ -60,7 +87,7 @@ public class User implements org.ozsoft.texasholdem.Client
      * @param players
      *            The players at the table (including this player).
      */
-    public void joinedTable(TableType type, int bigBlind, List<Player> players)
+    public void joinedTable(TableType type, int bigBlind, TreeMap<Integer, Player> players)
 	{
 		
 	}
@@ -139,5 +166,15 @@ public class User implements org.ozsoft.texasholdem.Client
     public Action act(int minBet, int currentBet, Set<Action> allowedActions)
 	{
 		return Action.ALL_IN;
+	}
+	
+	public class NotEnoughCashException extends Exception
+	{
+		
+	}
+	
+	public class AlreadyPlayingOnOtherTableException extends Exception
+	{
+		
 	}
 }

@@ -12,5 +12,49 @@ package com.brkpoker.texasholdem.webobject;
  */
 public class AuthObject
 {
+	private boolean success;
+	private String name;
+	private int cash;
 	
+	public AuthObject()
+	{
+		
+	}
+	
+	public AuthObject(boolean success, String name, int cash)
+	{
+		this.success = success;
+		this.name = name;
+		this.cash = cash;
+	}
+	
+	public boolean getSuccess()
+	{
+		return success;
+	}
+	
+	public void setSuccess(boolean success)
+	{
+		this.success = success;
+	}
+	
+	public String getName()
+	{
+		return name;
+	}
+	
+	public void setName(String name)
+	{
+		this.name = name;
+	}
+	
+	public int getCash()
+	{
+		return cash;
+	}
+	
+	public void setCash(int cash)
+	{
+		this.cash = cash;
+	}
 }

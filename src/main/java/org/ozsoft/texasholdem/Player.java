@@ -33,26 +33,26 @@ import org.ozsoft.texasholdem.actions.Action;
 public class Player {
 
     /** Name. */
-    private final String name;
+    protected String name;
 
     /** Client application responsible for the actual behavior. */
-    private final Client client;
+    protected final Client client;
 
     /** Hand of cards. */
-    private final Hand hand;
+    protected final Hand hand;
 
     /** Current amount of cash. */
-    private int cash;
+    protected int cash;
     
     /** Whether the player has hole cards. */
-    private boolean hasCards;
+    protected boolean hasCards;
 
     /** Current bet. */
-    private int bet;
+    protected int bet;
 
     /** Last action performed. */
-    private Action action;
-
+    protected Action action;
+	
     /**
      * Constructor.
      * 
@@ -132,6 +132,11 @@ public class Player {
     public String getName() {
         return name;
     }
+	
+	public void setName(String name)
+	{
+		this.name = name;
+	}
 
     /**
      * Returns the player's current amount of cash.

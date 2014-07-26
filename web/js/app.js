@@ -67,19 +67,17 @@
         $scope.is_playing = false;
         $scope.is_watching = false;
         $scope.dc_count = 0;
+        $scope.message = "";
+        
+        $scope.chips = 0;
+        $scope.min = 0;
+        $scope.max = 0;
+        $scope.small = 0;
+        $scope.big = 0;
         
         $scope.bet = 0;
         $scope.pot = 0;
         $scope.community_cards = [null, null, null, null, null];
-        
-        $scope.table_info = {
-            chips: 0,
-            name: "",
-            min: 0,
-            max: 0,
-            small: 0,
-            big: 0
-        };
         
         $scope.players = [];
         for(var tbl_num = 1; tbl_num <= 9; tbl_num++) {
@@ -91,7 +89,8 @@
         var imagesStorage = [];
         
         
-
+        console.log("Main controller initialized");
+        
         
         // Load wait dialog
         $timeout(function() {
@@ -138,7 +137,8 @@
            console.log("Connected to engine server");
            $rootScope.$broadcast('dialogs.wait.progress',{'progress' : 30, 'msg': 'Successfully connected to server. Waiting for authentication process.'});
            
-//           socket.emit('auth', {'authid': });
+           
+//           socket.emit('auth', {});
            /* @TODO: Loading table dialog */
            
         });
@@ -228,15 +228,16 @@
             
         });
         
+        socket.on('msg', function(data) {
+            $scope.message = data;
+        });
+        
         
         $scope.$watch('name', function(newVal) {
             if ($scope.is_connected) {
                 socket.emit('set:name', $scope.name);
             }
         });
-        
-        console.log("Main controller initialized");
-        
         
         function loadImages() {
             // Put all images here

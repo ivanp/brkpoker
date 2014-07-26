@@ -55,10 +55,10 @@
 </form>
 
                         <p class="navbar-text navbar-right" ng-show="is_playing">
-                            <span class="badge">Chips: <span id="chips">{{table_info.chips|number}}</span></span>
-                            <span class="badge">Table: {{table_info.name}}</span>
-                            <span class="badge">Min/Max: {{table_info.min|number}}/{{table_info.max|number}}</span>
-                            <span class="badge">Small/Big: {{table_info.small|number}}/{{table_info.big|number}}</span>
+                            <span class="badge">Chips: <span id="chips">{{chips|number}}</span></span>
+                            <span class="badge">Table: {{name}}</span>
+                            <span class="badge">Min/Max: {{min|number}}/{{max|number}}</span>
+                            <span class="badge">Small/Big: {{small|number}}/{{big|number}}</span>
 
                         </p>
 
@@ -112,7 +112,7 @@
                         <br/>
                         <div class="row">
                             <div class="col-md-6 col-md-offset-3">
-                                <div id="message" class="alert" role="alert">Please take a seat</div>
+                                <div id="message" class="alert" role="alert">{{message}}</div>
                             </div>
                         </div>
                         <br/>

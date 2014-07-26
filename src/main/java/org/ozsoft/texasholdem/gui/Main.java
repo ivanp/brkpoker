@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.swing.JFrame;
 
@@ -109,8 +110,9 @@ public class Main extends JFrame implements Client {
         players.put("Eddie",  new Player("Eddie", STARTING_CASH, new BasicBot(50, 25)));
 
         table = new Table(TABLE_TYPE, BIG_BLIND);
+		int tbl_num = 1;
         for (Player player : players.values()) {
-            table.addPlayer(player);
+            table.addPlayer(tbl_num++, player);
         }
         
         playerPanels = new HashMap<String, PlayerPanel>();
@@ -161,8 +163,8 @@ public class Main extends JFrame implements Client {
     }
 
     @Override
-    public void joinedTable(TableType type, int bigBlind, List<Player> players) {
-        for (Player player : players) {
+    public void joinedTable(TableType type, int bigBlind, TreeMap<Integer, Player> players) {
+        for (Player player : players.values()) {
             PlayerPanel playerPanel = playerPanels.get(player.getName());
             if (playerPanel != null) {
                 playerPanel.update(player);

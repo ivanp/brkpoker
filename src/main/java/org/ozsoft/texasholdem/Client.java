@@ -19,6 +19,7 @@ package org.ozsoft.texasholdem;
 
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.ozsoft.texasholdem.actions.Action;
 
@@ -51,7 +52,7 @@ public interface Client {
      * @param players
      *            The players at the table (including this player).
      */
-    void joinedTable(TableType type, int bigBlind, List<Player> players);
+    void joinedTable(TableType type, int bigBlind, TreeMap<Integer, Player> players);
     
     /**
      * Handles the start of a new hand.

@@ -13,8 +13,9 @@ import com.brkpoker.texasholdem.webobject.AuthObject;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.*;
-import java.util.List;
 import java.util.Map;
+import org.ozsoft.texasholdem.Player;
+import org.ozsoft.texasholdem.Table;
 
 /**
  *
@@ -33,10 +34,12 @@ public class SocketService
 		String authid = client.getHandshakeData().getSingleUrlParam("authid");
 		System.out.printf("authid: %s\n", authid);
 
-		client.sendEvent("auth", true);
+		String name = String.format("user%d", Users.size()+1);
+		AuthObject auth = new AuthObject(true, name, 5000);
+		client.sendEvent("auth", auth);
 
 		User user = new User(client);
-		user.setName(String.format("user%d", Users.size()+1));
+		user.setName(name);
 		Users.put(client.getSessionId().toString(), user);
 	}
 	
@@ -45,6 +48,7 @@ public class SocketService
 	{
 		System.out.println("Client: "+client.getSessionId().toString()+" disconnected");
 		Users.remove(client.getSessionId().toString());
+		// @TODO: remove from spectators & remove player gracefully
 	}
 	
 	@OnEvent("set:name")
@@ -56,15 +60,10 @@ public class SocketService
 	}
 	
 	@OnEvent("get:tables")
-	public void onGetTablesHandler(SocketIOClient client, List<String> data, AckRequest ackRequest) 
+	public void onGetTablesHandler(SocketIOClient client, String data, AckRequest ackRequest) 
 	{
 		System.out.println("Received request get tables");
-		int argc = 0;
-		for(String str : data)
-		{
-			System.out.printf("Arg #%d: %s\n", ++argc, str);
-		}
-		//System.out.println("Received request get tables: "+data);
+		
 		String[] table_names = new String[TableCount];
 		int idx = 0;
 		for (Map.Entry<String, Table> entry : Tables.entrySet())
@@ -84,6 +83,14 @@ public class SocketService
 	public void onWatchHandler(SocketIOClient client, String data, AckRequest ackRequest) 
 	{
 		System.out.printf("Watching table: %s\n", data);
+		
+		Table table = Tables.get(data);
+		if(null != table)
+		{
+			
+		}
+		else
+			client.sendEvent("error", "Table "+data+" does not exist");
 	}
 	
 	/**
@@ -107,12 +114,5 @@ public class SocketService
 		
 	}
 	
-	@OnEvent("auth")
-	public void onAuthHandler(SocketIOClient client, AuthObject data, AckRequest ackRequest) 
-	{
-		System.out.println("Received auth");
-		// @TODO: check if user is currently playing, nonspectator & spectator 
-		// are not allowed to chat
-		
-	}
+	
 }

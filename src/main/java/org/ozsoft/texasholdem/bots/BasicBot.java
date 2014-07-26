@@ -19,6 +19,7 @@ package org.ozsoft.texasholdem.bots;
 
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.ozsoft.texasholdem.Card;
 import org.ozsoft.texasholdem.Player;
@@ -85,7 +86,7 @@ public class BasicBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void joinedTable(TableType type, int bigBlind, List<Player> players) {
+    public void joinedTable(TableType type, int bigBlind, TreeMap<Integer, Player> players) {
         this.tableType = type;
     }
 
