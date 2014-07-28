@@ -91,7 +91,7 @@ public class BasicBot extends Bot {
     }
 	
 	@Override
-	public void leavedTable(int seatNum, Player player) {
+	public void leavedTable(Player player) {
 	}
 
     /** {@inheritDoc} */
@@ -108,7 +108,7 @@ public class BasicBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void actorRotated(int seatNum, Player actor) {
+    public void actorRotated(Player actor) {
         // Not implemented.
     }
 
@@ -120,7 +120,7 @@ public class BasicBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void playerUpdated(int seatNum, Player player) {
+    public void playerUpdated(Player player) {
         if (player.getCards().length == NO_OF_HOLE_CARDS) {
             this.cards = player.getCards();
         }
@@ -213,4 +213,9 @@ public class BasicBot extends Bot {
         return action;
     }
     
+	@Override
+	public void playerWon(Player player, int amount)
+	{
+		
+	}
 }

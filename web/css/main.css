@@ -23,11 +23,38 @@ body {
     background-color: rgba(255,255,255,0.4);
 }
 
-#action_buttons button {
-    min-width: 96px;
+.action_buttons button {
+    min-width: 108px;
+}
+
+.action_buttons .input-group {
+    width: 174px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.action_buttons .form-inline .input-group>.form-control,
+.action_buttons input {
+    width: 64px;
+    text-align: right;
 }
 
 #board_panel {
+}
+
+#slider {
+    width: 240px;
+    display: inline-block;
+    margin-left: 16px;
+    margin-right: 16px;
+}
+
+slider span.pointer {
+    border: none;
+}
+
+#slider slider {
+    text-align: left;
 }
 
 #community_cards {
@@ -85,7 +112,7 @@ div.player_box {
     padding: 4px;
 }
 
-.player_overlay.allin {
+.player_overlay.all-in {
     background: url('../img/action/action_allin.png') no-repeat center;
 }
 .player_overlay.bet {
@@ -99,6 +126,12 @@ div.player_box {
 }
 .player_overlay.fold {
     background: url('../img/action/action_fold.png') no-repeat center;
+}
+.player_overlay.raise {
+    background: url('../img/action/action_raise.png') no-repeat center;
+}
+.player_overlay.winner {
+    background: url('../img/action/action_winner.png') no-repeat center;
 }
 
 .player_join {

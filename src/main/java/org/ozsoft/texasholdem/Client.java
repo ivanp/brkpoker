@@ -54,7 +54,7 @@ public interface Client {
      */
     void joinedTable(TableType type, int bigBlind, int seatNum, Player player);
 	
-	void leavedTable(int seatNum, Player player);
+	void leavedTable(Player player);
     
     /**
      * Handles the start of a new hand.
@@ -70,7 +70,7 @@ public interface Client {
      * @param actor
      *            The new actor.
      */
-    void actorRotated(int seatNum, Player actor);
+    void actorRotated(Player actor);
     
     /**
      * Handles an update of this player.
@@ -78,7 +78,7 @@ public interface Client {
      * @param player
      *            The player.
      */
-    void playerUpdated(int seatNum, Player player);
+    void playerUpdated(Player player);
     
     /**
      * Handles an update of the board.
@@ -114,4 +114,5 @@ public interface Client {
      */
     Action act(int minBet, int currentBet, Set<Action> allowedActions);
 
+	void playerWon(Player player, int amount);
 }

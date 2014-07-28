@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import org.json.simple.JSONObject;
 import org.ozsoft.texasholdem.Card;
 import org.ozsoft.texasholdem.Player;
 import org.ozsoft.texasholdem.Table;
@@ -91,43 +90,19 @@ public class User implements org.ozsoft.texasholdem.Client
 	{
 		Map obj = new HashMap();
 		obj.put("name", table.getName());
-		obj.put("count", table.getPlayersCount());
 		obj.put("max", table.getMaxPlayers());
-		obj.put("bigblind", table.getBigBlind());
+		obj.put("big", table.getBigBlind());
 		obj.put("msg", table.getMessage());
+		obj.put("bet", table.getCurrentBet());
+		obj.put("pot", table.getTotalPot());
 		obj.put("showdown", table.getIsShowdown());
 		// Current actor
-		obj.put("actor", table.getIsShowdown());
-		// Last action
-		obj.put("action", table.getIsShowdown());
+		obj.put("actor", table.getActorSeatNum());
+		obj.put("cards", getCardHash(table.getBoard()));
 		
 		List players = new ArrayList();
-		for (Map.Entry<Integer, Player> entry : table.getPlayers().entrySet())
-		{
-			int num = entry.getKey();
-			Player player = entry.getValue();
-			Map playerObj = new HashMap();
-			// seat number
-			playerObj.put("num", num);
-			playerObj.put("name", player.getName());
-			playerObj.put("cash", player.getCash());
-			playerObj.put("last_action", player.getAction());
-			playerObj.put("bet", player.getBet());
-			playerObj.put("is_available", false);
-			playerObj.put("is_loading", false);
-			playerObj.put("is_seated", true);
-			playerObj.put("has_cards", player.hasCards());
-			playerObj.put("is_turn", (num == table.getActorPos()));
-			playerObj.put("is_dealer", (num == table.getDealerPos()));
-			if (table.getIsShowdown()) {
-				List cards = new ArrayList<String>();
-				for (Card card : player.getCards())
-					cards.add(card.hashCode());
-				playerObj.put("cards", cards);
-			}
-			
-			players.add(playerObj);
-		}
+		for (Player player : table.getPlayers().values())
+			players.add(getPlayerObjectData(player));
 		obj.put("players", players);
 		
 		client.sendEvent("game:repaint", obj);
@@ -163,10 +138,12 @@ public class User implements org.ozsoft.texasholdem.Client
 		}
 		
 		cash -= buyin;
-		player = new Player(name, buyin, this, table);
+		player = new Player(seatNum, name, buyin, this, table);
 		try
 		{
 			table.addPlayer(seatNum, player);
+			// Confirm client
+			client.sendEvent("sit", getPlayerObjectData(player));
 		}
 		catch (Table.InvalidSeatException e)
 		{
@@ -195,8 +172,6 @@ public class User implements org.ozsoft.texasholdem.Client
 		if (table != null)
 		{
 			joinTable(table, seatNum, buyin);
-			// @TODO: send table information
-			// @TODO: repaint table
 		}
 		else
 		{
@@ -240,16 +215,16 @@ public class User implements org.ozsoft.texasholdem.Client
 		obj.put("is_loading", false);
 		obj.put("is_seated", true);
 		obj.put("has_cards", false);
-		obj.put("card1", null);
-		obj.put("card2", null);
+		
+		//obj.put("cards", cards);
 		client.sendEvent("player:join", obj);
 	}
 	
-	public void leavedTable(int seatNum, Player player)
+	public void leavedTable(Player player)
 	{
 		// player:leave
 		Map obj = new HashMap();
-		obj.put("num", seatNum);
+		obj.put("num", player.getSeatNum());
 		obj.put("name", player.getName());
 		client.sendEvent("player:leave", obj);
 	}
@@ -263,6 +238,9 @@ public class User implements org.ozsoft.texasholdem.Client
     public void handStarted(Player dealer)
 	{
 		// game:start
+		Map obj = new HashMap();
+		obj.put("num", dealer.getSeatNum());
+		client.sendEvent("game:start", obj);
 	}
     
     /**
@@ -271,11 +249,11 @@ public class User implements org.ozsoft.texasholdem.Client
      * @param actor
      *            The new actor.
      */
-    public void actorRotated(int seatNum, Player actor)
+    public void actorRotated(Player actor)
 	{
 		// game:rotate
 		Map obj = new HashMap();
-		obj.put("num", seatNum);
+		obj.put("num", player.getSeatNum());
 		client.sendEvent("game:rotate", obj);
 	}
     
@@ -285,10 +263,10 @@ public class User implements org.ozsoft.texasholdem.Client
      * @param player
      *            The player.
      */
-    public void playerUpdated(int seatNum, Player player)
+    public void playerUpdated(Player player)
 	{
-		Map obj = new HashMap();
-		obj.put("num", seatNum);
+		Map obj = getPlayerObjectData(player);
+		client.sendEvent("player:update", obj);
 	}
     
     /**
@@ -303,7 +281,12 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void boardUpdated(List<Card> cards, int bet, int pot)
 	{
-		// table:update
+		// game:update
+		Map obj = new HashMap();
+		obj.put("bet", bet);
+		obj.put("pot", pot);
+		obj.put("cards", getCardHash(cards));
+		client.sendEvent("game:update", obj);
 	}
     
     /**
@@ -314,7 +297,16 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void playerActed(Player player)
 	{
-		// player:action
+		// player:act
+		Map obj = new HashMap();
+		obj.put("num", player.getSeatNum());
+		Action action = player.getAction();
+		obj.put("bet", player.getBet());
+		obj.put("action", action);
+		obj.put("last_action", action.getName().toLowerCase());
+		if (action.getName()=="Bet" || action.getName()=="Raise")
+			obj.put("amount", action.getAmount());
+		client.sendEvent("player:act", obj);
 	}
 
     /**
@@ -331,8 +323,17 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public Action act(int minBet, int currentBet, Set<Action> allowedActions)
 	{
-		RequestActionObject data = new RequestActionObject(minBet, currentBet, allowedActions.toArray(new String[0]));
-		client.sendEvent("game.reqact", data);
+		Map obj = new HashMap();
+		obj.put("min", minBet);
+		obj.put("bet", currentBet);
+		
+		List actions = new ArrayList();
+		for (Action action : allowedActions) {
+			actions.add(action.getName());
+		}
+		obj.put("actions", actions);
+		
+		client.sendEvent("game:act", obj);
 		synchronized (actionLock) {
 			try
 			{
@@ -340,9 +341,21 @@ public class User implements org.ozsoft.texasholdem.Client
 			}
 			catch (InterruptedException e)
 			{
+				System.out.printf("User %s User.act received InterruptedException, giving fold as a default\n", this.name);
+				lastAction = Action.FOLD;
 			}
 		}
 		return lastAction;
+	}
+	
+	@Override
+	public void playerWon(Player player, int amount)
+	{
+		Map obj = new HashMap();
+		obj.put("num", player.getSeatNum());
+		obj.put("cash", player.getCash());
+		obj.put("amount", amount);
+		client.sendEvent("player:won", obj);
 	}
 	
 	/**
@@ -354,6 +367,48 @@ public class User implements org.ozsoft.texasholdem.Client
 		synchronized (actionLock) {
 			actionLock.notify();
 		}
+	}
+	
+	public Map getPlayerObjectData(Player player)
+	{
+		Table table = player.getTable();
+		
+		Map obj = new HashMap();
+		
+		int seatNum = player.getSeatNum();
+		obj.put("num", seatNum);
+		obj.put("name", player.getName());
+		obj.put("cash", player.getCash());
+		obj.put("last_action", player.getAction().toString().toLowerCase());
+		obj.put("bet", player.getBet());
+		obj.put("is_available", false);
+		obj.put("is_loading", false);
+		obj.put("is_seated", true);
+		obj.put("has_cards", player.hasCards());
+		obj.put("is_turn", (seatNum == table.getActorSeatNum()));
+		obj.put("is_dealer", (seatNum == table.getDealerSeatNum()));
+		if (player.hasCards()) {
+			obj.put("cards", getCardHash(
+					player.getCards()));
+		}
+			
+		return obj;
+	}
+	
+	public List getCardHash(Card[] cards)
+	{
+		List hash = new ArrayList();
+		for (Card card : cards) 
+			hash.add(card.hashCode());
+		return hash;
+	}
+	
+	public List getCardHash(List<Card> cards)
+	{
+		List hash = new ArrayList();
+		for (Card card : cards) 
+			hash.add(card.hashCode());
+		return hash;
 	}
 	
 	public class NotEnoughCashException extends Exception

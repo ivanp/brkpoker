@@ -27,7 +27,12 @@
     }
 
     // Initialize app
-    var BrkPokerApp = angular.module('brkPokerApp', ['ui.bootstrap', 'dialogs.main', 'btford.socket-io']);
+    var BrkPokerApp = angular.module('brkPokerApp', [
+        'ui.bootstrap', 
+        'dialogs.main', 
+        'btford.socket-io',
+        'uiSlider'
+    ]);
     
     BrkPokerApp.factory('socket', function (socketFactory) {
         var socket = io.connect('//' + window.location.host + '?authid=abc', {
@@ -62,30 +67,10 @@
     BrkPokerApp.controller('MainController', function($timeout, $scope, $rootScope, dialogs, socket) {
         /* Get this from session or URL query i guess */
         $scope.authid = "";
-        // Generate guest name
-        $scope.name = "";
-        $scope.table = "";
         $scope.is_loading = true;
         $scope.is_connected = false;
         $scope.is_playing = false;
         $scope.is_watching = false;
-        $scope.mode = ""; // "play" or "watch"
-        $scope.dc_count = 0;
-        $scope.message = "";
-        
-        $scope.chips = 0;
-        $scope.min = 0;
-        $scope.max = 0;
-        $scope.small = 0;
-        $scope.big = 0;
-        
-        $scope.bet = 0;
-        $scope.pot = 0;
-        $scope.community_cards = [null, null, null, null, null];
-
-        $scope.actor_pos = 0;
-
-        $scope.allowedActions = [];
         
         // Access players from getPlayer(seat_num)
         $scope.players = [null];
@@ -93,6 +78,8 @@
             $scope.players[seatNum] = createPlayerPanel(seatNum);
         }
         console.log("Player panels initialized");
+
+        resetTable();
         
         var imagesUploaded = 0;
         var imagesStorage = [];
@@ -137,12 +124,17 @@
 
         /* Fields Monitors */
         
-        $scope.$watch('is_connected', function(newVal) {
-            if (!$scope.is_connected) {
-                // disconnected, show connecting modal
-                connect();
-            }
-        });
+        // $scope.$watch('is_connected', function(newVal) {
+        //     if (!$scope.is_connected) {
+        //         // disconnected, show connecting modal
+        //         connect();
+        //     }
+        // });
+        // TESTING
+        $scope.is_connected = true;
+        $scope.is_playing = true;
+        $scope.allowed_actions = ["Raise", "Check", "Fold", "All-in"];
+
         
         /* Sockets Messages Handlers */
 
@@ -182,6 +174,7 @@
             $scope.is_playing = false;
             $scope.is_watching = true;
             $scope.table = data;
+            $scope.mode = "watch";
         });
 
         /**
@@ -190,6 +183,11 @@
         socket.on('sit', function(data) {
             $scope.is_watching = false;
             $scope.is_playing = true;
+            $scope.mode = "play";
+
+            var player = getPlayer(data.num);
+            player.update(data);
+            console.log('Client is now playing as '+data.name);
         });
 
         /**
@@ -201,6 +199,7 @@
         socket.on('player:join', function(data) {
             var player = getPlayer(data.num);
             player.update(data);
+            player.cards = [null, null];
             console.log('Player '+data.name+' joined');
         });
         
@@ -216,19 +215,27 @@
         /**
          * Player taking an action
          */
-        socket.on('player:action', function(data) {
-            
+        socket.on('player:act', function(data) {
+            var player = getPlayer(data.num);
+            player.last_action = data.last_action;
+            player.bet = data.bet;
         });
         
         /**
          * Player disconnected
          */
         socket.on('player:dc', function(data) {
-            
+            var player = getPlayer(data.num);
+            console.log("Player "+player.name+" disconnected");
+            player.reset();
         });
         
+        /**
+         * Player updated
+         */
         socket.on('player:update', function(data) {
-
+            var player = getPlayer(data.num);
+            player.update(data);
         });
 
         /**
@@ -236,13 +243,34 @@
          * data.dealer => seat number of dealer
          */
         socket.on('game:start', function(data) {
-
+            if ($scope.dealer_pos > 0) {
+                getPlayer($scope.dealer_pos).update({
+                    is_dealer: false,
+                    is_turn: false
+                });
+            }
+            $scope.dealer_pos = data.num;
+            getPlayer($scope.dealer_pos).update({
+                is_dealer: true,
+                is_turn: true
+            });
         });
 
         /**
          * Repaint table
          */
         socket.on('game:repaint', function(data) {
+            $scope.name = data.name;
+            $scope.max = data.max;
+            $scope.big = data.big;
+            $scope.message = data.msg;
+            $scope.bet = data.bet;
+            $scope.pot = data.pot;
+            $scope.community_cards = [null, null, null, null, null];
+            if ($scope.cards != undefined) {
+                for (var i = 0; i < data.cards.length; i++)
+                    $scope.community_cards[i] = data.cards[i];
+            }
 
         });
 
@@ -252,17 +280,30 @@
             getPlayer(data.num).is_turn = true;
             $scope.actor_pos = data.num;
         });
+
+        socket.on('game:update', function(data) {
+            $scope.bet = data.bet;
+            $scope.pot = data.pot;
+            for (var i = 0; i < data.cards.length; i++)
+                $scope.community_cards[i] = data.cards[i];
+        });
         
         /**
          * Request this player to act
          */
-        socket.on('game:reqact', function(data) {
-            
+        socket.on('game:act', function(data) {
+            $scope.min_bet = data.min;
+            $scope.bet_amount = data.bet;
+            $scope.allowed_actions = data.actions;
+            $scope.is_action = true;
         });
         
             
-        socket.on('game:winner', function(data) {
-            
+        socket.on('player:won', function(data) {
+            var player = getPlayer(data.num);
+            player.cash = data.cash;
+            player.last_action = "winner";
+            console.log("Player "+player.name+" wins "+data.amount);
         });
 
         socket.on('chat', function(data) {
@@ -280,11 +321,11 @@
             console.log("Disconnected from engine server");
         });
         
-        socket.on('error', function(err) {
-            if ($scope.is_connected)
-                $scope.is_connected = false;
-            console.log('Socket error');
-        });
+        // socket.on('error', function(err) {
+        //     if ($scope.is_connected)
+        //         $scope.is_connected = false;
+        //     console.log('Socket error');
+        // });
         
         
         $scope.$watch('name', function(newVal) {
@@ -347,10 +388,41 @@
 
         function resetTable() {
             $scope.bet = 0;
+            // Generate guest name
+            $scope.name = "";
+            $scope.table = "";
+            
+            $scope.is_action = false;
+            $scope.mode = ""; // "play" or "watch"
+            $scope.dc_count = 0;
+            $scope.message = "";
+            $scope.chips = 0; // player chips
+            $scope.min = 0;
+            $scope.max = 0;
+            $scope.small = 0;
+            $scope.big = 0;
+            $scope.bet = 0; // bets
+            $scope.pot = 0; // total pot
+            $scope.community_cards = [null, null, null, null, null];
+
+            $scope.actor_pos = 0;
+            $scope.dealer_pos = 0;
+
+            $scope.allowed_actions = [];
+
+            $scope.slider_min = 0;
+            $scope.slider_max = 0;
+            $scope.bet_amount = 0;
+
+            for (var num = 1; num <= 9; num++) {
+                getPlayer(num).reset();
+            }
         }
         
         function createPlayerPanel(num) {
             var tbl_info = {
+                "num": num,
+                sclass: "player_box col-md-2",
                 sit: function() {
                     console.log("Sitting at table + "+num);
                     for (var idx in $scope.players) {
@@ -368,7 +440,6 @@
                 },
                 reset: function() {
                     this.update({
-                        "num": num,
                         name: "",
                         avatar: "",
                         cash: 0,
@@ -391,11 +462,13 @@
                         is_smallblind: false,
                         is_bigblind: false,
                         is_winning: false,
-                        last_action: "",
-                        sclass: "player_box col-md-2"
+                        last_action: ""
+                        
                     });
                 }
             };
+
+            tbl_info.reset();
             switch(num) {
                 case 8:
                     tbl_info.sclass = tbl_info.sclass + " col-md-offset-2";
@@ -404,7 +477,7 @@
                     tbl_info.sclass = tbl_info.sclass + " col-md-offset-1";
                     break;  
             }
-            tbl_info.reset();
+            
             return tbl_info;
         }
 
@@ -412,11 +485,23 @@
             return $scope.players[num];
         }
 
-        
+        $scope.isInGame = function() {
+            var is_in_game = $scope.is_connected && ($scope.is_watching || $scope.is_playing);
+            console.log("I am " + (is_in_game ? "in" : "not in") + " game");
+            return is_in_game;
+        };
         
         $scope.isActionAllowed = function(action) {
-            return ($scope.allowedActions.indexOf(action) >= 0);
+            return ($scope.allowed_actions.indexOf(action) >= 0);
         };
+
+        $scope.act = function(action) {
+            var obj = {};
+            obj.name = action;
+            if(action == "Bet" || action == "Raise")
+                obj.amount = $scope.bet_amount;
+            socket.emit('act')
+        }
     });
 
     
@@ -455,25 +540,7 @@
     });
     
     
-    /* Control $scope from outside */
-setTimeout(function() {
-//    var appElement = document.querySelector('[ng-controller=PlayerPanelController]');
-    var $scope = getControllerScope('MainController');
-    $scope.$apply(function() {
-        $scope.players[0].is_seated = true;
-        $scope.players[0].is_playing = true;
-        $scope.players[0].is_turn = true;
-        $scope.players[0].card1 = 5;
-        $scope.players[0].card2 = 15;
-        $scope.players[0].is_smallblind = true;
-        $scope.players[0].last_action = 'allin';
-        
-//        $scope['p9'].is_available = false;
-//        $scope.p1.seated = true;
-//        $scope.p1.card1 = 5;
-//        $scope.p1.card2 = 51;
-    });
-}, 1000);
+
 
 
 })();

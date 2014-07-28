@@ -17,6 +17,7 @@
 
 package org.ozsoft.texasholdem;
 
+import com.brkpoker.texasholdem.User;
 import java.util.List;
 
 import org.ozsoft.texasholdem.actions.Action;
@@ -32,6 +33,9 @@ import org.ozsoft.texasholdem.actions.Action;
  */
 public class Player {
 
+	/** Seat Number */
+	protected final int seatNum;
+	
     /** Name. */
     protected String name;
 
@@ -65,7 +69,8 @@ public class Player {
      * @param client
      *            The client application.
      */
-    public Player(String name, int cash, Client client, Table table) {
+    public Player(int seatNum, String name, int cash, Client client, Table table) {
+		this.seatNum = seatNum;
         this.name = name;
         this.cash = cash;
         this.client = client;
@@ -88,6 +93,11 @@ public class Player {
 	public Table getTable()
 	{
 		return table;
+	}
+	
+	public int getSeatNum()
+	{
+		return seatNum;
 	}
 
     /**
@@ -210,7 +220,7 @@ public class Player {
     public Card[] getCards() {
         return hand.getCards();
     }
-
+	
     /**
      * Posts the small blind.
      * 
@@ -256,6 +266,15 @@ public class Player {
      */
     public void win(int amount) {
         cash += amount;
+		client.playerWon(this, amount);
+		
+		for (Player playerToNotify : table.getPlayers().values()) {
+			playerToNotify.getClient().playerWon(this, amount);
+		}
+		
+		for (User user : table.getSpectators()) {
+			user.playerWon(this, amount);
+		}
     }
 
     /**
@@ -264,7 +283,7 @@ public class Player {
      * @return The cloned player.
      */
     public Player publicClone() {
-        Player clone = new Player(name, cash, null, table);
+        Player clone = new Player(seatNum, name, cash, null, table);
         clone.hasCards = hasCards;
         clone.bet = bet;
         clone.action = action;

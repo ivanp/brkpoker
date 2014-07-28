@@ -48,7 +48,7 @@ public class DummyBot extends Bot {
     }
 	
 	@Override
-	public void leavedTable(int seatNum, Player player) {
+	public void leavedTable(Player player) {
 		
 	}
 
@@ -60,13 +60,13 @@ public class DummyBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void actorRotated(int seatNum, Player actor) {
+    public void actorRotated(Player actor) {
         // Not implemented.
     }
 
     /** {@inheritDoc} */
     @Override
-    public void playerUpdated(int seatNum, Player player) {
+    public void playerUpdated(Player player) {
         // Not implemented.
     }
 
@@ -92,4 +92,9 @@ public class DummyBot extends Bot {
         }
     }
     
+	@Override
+	public void playerWon(Player player, int amount)
+	{
+		
+	}
 }

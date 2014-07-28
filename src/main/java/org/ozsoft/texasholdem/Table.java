@@ -152,6 +152,11 @@ public class Table implements Runnable {
 		return bigBlind;
 	}
 	
+	public int getCurrentBet()
+	{
+		return bet;
+	}
+	
 	public String getMessage()
 	{
 		return message;
@@ -162,14 +167,20 @@ public class Table implements Runnable {
 		return showdown;
 	}
 	
-	public int getActorPos()
+	public int getActorSeatNum()
 	{
-		return actorPosition;
+		return actor.getSeatNum();
 	}
     
-	public int getDealerPos()
+	public int getDealerSeatNum()
 	{
-		return dealerPosition;
+		return dealer.getSeatNum();
+	}
+	
+	public List<Card> getBoard()
+	{
+		List<Card> boardCopy = new ArrayList<Card>(board);
+		return boardCopy;
 	}
 	
     /**
@@ -215,9 +226,9 @@ public class Table implements Runnable {
 		}
 		
 		for (Player playerToNotify : players.values())
-			playerToNotify.getClient().leavedTable(seatNum, player);
+			playerToNotify.getClient().leavedTable(player);
 		for (User user : spectators) {
-			user.leavedTable(seatNum, player);
+			user.leavedTable(player);
 		}
 	}
 	
@@ -238,9 +249,9 @@ public class Table implements Runnable {
 		
 		if (seatNum > 0) {
 			for (Player playerToNotify : players.values())
-				playerToNotify.getClient().leavedTable(seatNum, player);
+				playerToNotify.getClient().leavedTable(player);
 			for (User user : spectators) {
-				user.leavedTable(seatNum, player);
+				user.leavedTable(player);
 			}
 		}
 	}
@@ -263,6 +274,11 @@ public class Table implements Runnable {
 			}
 		}
 		return players;
+	}
+	
+	public List<User> getSpectators()
+	{
+		return spectators;
 	}
 	
 	public int getPlayersCount()
@@ -460,14 +476,12 @@ public class Table implements Runnable {
         actorPosition = (actorPosition + 1) % activePlayers.size();
         actor = activePlayers.get(actorPosition);
         for (Player player : players.values()) {
-            player.getClient().actorRotated(
-					actorPosition, actor);
+            player.getClient().actorRotated(actor);
         }
 		
 		// spectators
 		for (User user : spectators) {
-            user.actorRotated(actorPosition, 
-					actor.publicClone());
+            user.actorRotated(actor.publicClone());
         }
     }
     
@@ -784,22 +798,20 @@ public class Table implements Runnable {
             }
             if (doShow) {
                 // Show hand.
-                for (Map.Entry<Integer, Player> entry : players.entrySet()) {
-					Player player = entry.getValue();
-                    player.getClient().playerUpdated(entry.getKey(), playerToShow);
+                for (Player player : players.values()) {
+                    player.getClient().playerUpdated(playerToShow);
                 }
                 notifyMessage("%s has %s.", playerToShow, handValue.getDescription());
             } else {
                 // Fold.
                 playerToShow.setCards(null);
                 activePlayers.remove(playerToShow);
-                for (Map.Entry<Integer, Player> entry : players.entrySet()) {
-					Player player = entry.getValue();
+                for (Player player : players.values()) {
                     if (player.equals(playerToShow)) {
-                        player.getClient().playerUpdated(entry.getKey(), playerToShow);
+                        player.getClient().playerUpdated( playerToShow);
                     } else {
                         // Hide secret information to other players.
-                        player.getClient().playerUpdated(entry.getKey(), playerToShow.publicClone());
+                        player.getClient().playerUpdated(playerToShow.publicClone());
                     }
                 }
                 notifyMessage("%s folds.", playerToShow);
@@ -934,7 +946,7 @@ public class Table implements Runnable {
      * 
      * @return The total pot size.
      */
-    protected int getTotalPot() {
+    public int getTotalPot() {
         int totalPot = 0;
         for (Pot pot : pots) {
             totalPot += pot.getValue();
@@ -956,25 +968,23 @@ public class Table implements Runnable {
 		this.showdown = showdown;
 		
         for (Player playerToNotify : players.values()) {
-            for (Map.Entry<Integer, Player> entry : players.entrySet()) {
-				Player player = entry.getValue();
+            for (Player player : players.values()) {
                 if (!showdown && !player.equals(playerToNotify)) {
                     // Hide secret information to other players.
                     player = player.publicClone();
                 }
-                playerToNotify.getClient().playerUpdated(entry.getKey(), player);
+                playerToNotify.getClient().playerUpdated(player);
             }
         }
 		
 		// spectators
 		for (User userToNotify : spectators) {
-			for (Map.Entry<Integer, Player> entry : players.entrySet()) {
-				Player player = entry.getValue();
+			for (Player player : players.values()) {
 				if (showdown) {
-					userToNotify.playerUpdated(entry.getKey(), player);
+					userToNotify.playerUpdated(player);
 				} else {
 					// Hide secret information to other players.
-					userToNotify.playerUpdated(entry.getKey(), player.publicClone());
+					userToNotify.playerUpdated(player.publicClone());
 				}
 			}
 				

@@ -3,6 +3,7 @@
         <meta charset="utf-8">
 
         <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"/>
+        <link href="//cdn.rawgit.com/prajwalkman/angular-slider/v0.1.6/angular-slider.css" rel="stylesheet"/>
         <link href="css/main.css" rel="stylesheet"/>
 
     </head>
@@ -133,37 +134,67 @@
             </div>
 
         </div>
+            </div>
 
 
         <nav id="footer" class="navbar navbar-fixed-bottom" role="navigation" ng-show="is_connected && (is_playing || is_watching)" style="visibility: hidden">
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                     <!-- @TODO: Logging -->
                     </div>
-                    <div class="col-md-6 text-center">
+                    <div class="col-md-8 text-center">
                         
-                        <div id="action_buttons" class="row" ng-show="is_playing">
-                            <button class="btn btn-success" ng-click="actBtnCheck()" ng-show="isActionAllowed('check')">Check</button>
-                            <button class="btn btn-success" ng-click="actBtnCall()" ng-show="isActionAllowed('call')">Call</button>
-                            <button class="btn btn-success" ng-click="actBtnBet()" ng-show="isActionAllowed('bet')">Bet</button>
-                            <button class="btn btn-success" ng-click="actBtnRaise()" ng-show="isActionAllowed('raise')">Raise {{raiseAmount|number}}</button>
-                            <button class="btn btn-success" ng-click="actBtnFold()" ng-show="isActionAllowed('fold')">Fold</button>
+                        <div class="action_buttons" class="row" ng-show="is_action">
+                            <div id="slider">
+                                <slider floor="20" ng-model-low="slider_min" ng-model-max="slider_max" step="50" precision="0" ng-model="bet_amount"></slider>
+                            </div>
+                            
+                            <button class="btn btn-warning" ng-click="act('All-in')" ng-show="isActionAllowed('All-in')">All-in</button>
+                        </div>
+                        <div class="action_buttons" class="row" ng-show="is_action">
+                            <form class="form-inline" role="form">
+                                
+                                <div class="input-group" ng-show="isActionAllowed('Raise')">
+                                    <input id="raise_amount" type="text" class="form-control" ng-model="raise_amount">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success" ng-click="act('Raise')">Raise</button>
+                                    </span>
+                                </div>
+                                
+                                <div class="input-group" ng-show="isActionAllowed('Bet')">
+                                    <input id="raise_amount" type="text" class="form-control" ng-model="bet_amount">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success" ng-click="act()" ng-show="isActionAllowed('Bet')">Bet</button>
+                                    </span>
+                                </div>
+
+                            <button class="btn btn-info" ng-click="act('Check')" ng-show="isActionAllowed('Check')">Check</button>
+                            <button class="btn btn-info" ng-click="act('Call')" ng-show="isActionAllowed('Call')">Call</button>
+                            
+                            
+
+                            
+                            
+
+                            <button class="btn btn-danger" ng-click="act('Fold')" ng-show="isActionAllowed('Fold')">Fold</button>
+                            </form>
                             
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                     <!-- @TODO: Chat -->
                     </div>
                 </div>
             </div>
         </nav>
-        </div>
+        
         
         <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.20/angular.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.20/angular-sanitize.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/bower-angular-translate/2.0.1/angular-translate.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.11.0/ui-bootstrap-tpls.js"></script>
+        <script src="//cdn.rawgit.com/prajwalkman/angular-slider/v0.1.6/angular-slider.js"></script>
         <script src="//cdn.rawgit.com/m-e-conroy/angular-dialog-service/v5.1.1/dialogs.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
         <script src="//cdn.rawgit.com/btford/angular-socket-io/v0.6.0/socket.js"></script>

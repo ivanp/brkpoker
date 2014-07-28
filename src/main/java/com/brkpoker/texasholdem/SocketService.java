@@ -9,6 +9,7 @@ package com.brkpoker.texasholdem;
 import static com.brkpoker.texasholdem.App.TableCount;
 import static com.brkpoker.texasholdem.App.Tables;
 import static com.brkpoker.texasholdem.App.Users;
+import com.brkpoker.texasholdem.webobject.ActionObject;
 import com.brkpoker.texasholdem.webobject.AuthObject;
 import com.brkpoker.texasholdem.webobject.SitObject;
 import com.corundumstudio.socketio.AckRequest;
@@ -16,7 +17,6 @@ import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.*;
 import java.util.Map;
 import org.ozsoft.texasholdem.Table;
-import org.json.simple.JSONObject;
 
 /**
  *
@@ -111,6 +111,12 @@ public class SocketService
 	public void onSitHandler(SocketIOClient client, SitObject data, AckRequest ackRequest) 
 	{
 		getUser(client).joinTable(data.getTableName(), data.getSeatNum(), data.getBuyIn());
+	}
+	
+	@OnEvent("act")
+	public void onActHandler(SocketIOClient client, ActionObject data, AckRequest ackRequest)
+	{
+		getUser(client).actResponse(data.getActionInstance());
 	}
 	
 	@OnEvent("chat")
