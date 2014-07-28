@@ -124,16 +124,17 @@
 
         /* Fields Monitors */
         
-        // $scope.$watch('is_connected', function(newVal) {
-        //     if (!$scope.is_connected) {
-        //         // disconnected, show connecting modal
-        //         connect();
-        //     }
-        // });
+        $scope.$watch('is_connected', function(newVal) {
+            if (!$scope.is_connected) {
+                resetTable();
+                // disconnected, show connecting modal
+                connect();
+            }
+        });
         // TESTING
-        $scope.is_connected = true;
-        $scope.is_playing = true;
-        $scope.allowed_actions = ["Raise", "Check", "Fold", "All-in"];
+        // $scope.is_connected = true;
+        // $scope.is_playing = true;
+        // $scope.allowed_actions = ["Raise", "Check", "Fold", "All-in"];
 
         
         /* Sockets Messages Handlers */
@@ -153,6 +154,9 @@
             $rootScope.$broadcast('dialogs.wait.progress',
                 {'progress' : 70, 
                 'msg': 'Authentication successful. Joining table T001.'});
+
+            $scope.name = data.name;
+            $scope.cash = data.cash;
 
             // @TODO: Get tables and list in a modal
             socket.emit('watch', 'T001');
@@ -271,7 +275,7 @@
                 for (var i = 0; i < data.cards.length; i++)
                     $scope.community_cards[i] = data.cards[i];
             }
-
+            console.log('Received game:repaint');
         });
 
         socket.on('game:rotate', function(data) {
@@ -396,7 +400,7 @@
             $scope.mode = ""; // "play" or "watch"
             $scope.dc_count = 0;
             $scope.message = "";
-            $scope.chips = 0; // player chips
+            $scope.cash = 0; // player chips
             $scope.min = 0;
             $scope.max = 0;
             $scope.small = 0;
@@ -424,14 +428,16 @@
                 "num": num,
                 sclass: "player_box col-md-2",
                 sit: function() {
-                    console.log("Sitting at table + "+num);
-                    for (var idx in $scope.players) {
-                        var tbl = $scope.players[idx];
-                        if (tbl.num == num)
-                            tbl.is_loading = true;
+                    console.log("Sitting at table + "+this.num);
+                    var player = getPlayer(this.num);
+                    for (var idx = 1; idx <= 9; idx++) {
+                        var player = getPlayer(idx);
+                        if (this.num == idx)
+                            player.is_loading = true;
                         else
-                            tbl.is_available = false;
+                            player.is_available = false;
                     }
+                    socket.emit("sit", this.num);
                 },
                 update: function(data) {
                     for (var key in data) {

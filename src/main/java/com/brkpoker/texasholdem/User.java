@@ -69,6 +69,7 @@ public class User implements org.ozsoft.texasholdem.Client
 			watchingTable.removeSpectator(this);
 		table.addSpectator(this);
 		watchingTable = table;
+		
 		client.sendEvent("watch", table.getName());
 		repaintTable(table);
 	}
@@ -88,6 +89,7 @@ public class User implements org.ozsoft.texasholdem.Client
 	
 	public void repaintTable(Table table)
 	{
+		System.out.println("Repainting table");
 		Map obj = new HashMap();
 		obj.put("name", table.getName());
 		obj.put("max", table.getMaxPlayers());
