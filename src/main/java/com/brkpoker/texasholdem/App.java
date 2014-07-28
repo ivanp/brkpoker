@@ -17,11 +17,14 @@ import org.ozsoft.texasholdem.*;
 public class App 
 {
 	public static final int ServerPort = 8082;
-	public static final int TableCount = 10;
+	public static final int TableCount = 1;
+	public static final int BigBlind = 10;
 	
 	// This is where the tables
 	//public static List<Table> Tables;
 	public static TreeMap<String, Table> Tables;
+	
+	public static TreeMap<String, Thread> Threads;
 	
 	/**
 	 * Connected players
@@ -32,14 +35,23 @@ public class App
 	{
 		// Setting up tables
 		Tables = new TreeMap<String, Table>();
-		for (int tbl_num = 0; tbl_num < TableCount; tbl_num++)
+		Threads = new TreeMap<String, Thread>();
+		for (int tbl_num = 1; tbl_num <= TableCount; tbl_num++)
 		{
-			String tbl_name = String.format("T%03d", tbl_num + 1);
-			Table table = new Table(TableType.FIXED_LIMIT, 10);
-			table.run();
+			// Table id/name: T001 - TXXX
+			String tbl_name = String.format("T%03d", 
+					tbl_num);
+			Table table = new Table(tbl_name, TableType.FIXED_LIMIT, BigBlind);
 			Tables.put(tbl_name, table);
+			
+			// Create a thread for each table
+			Thread thread = new Thread(table);
+			thread.start();
+			Threads.put(tbl_name, thread);
+			
+			System.out.println("Created table: "+tbl_name);
 		}
-		System.out.println("Created tables");
+		System.out.println("Started "+TableCount+" table threads");
 		// Users
 		Users = new HashMap<String, User>();
 	}
@@ -49,6 +61,7 @@ public class App
 		com.corundumstudio.socketio.Configuration config = new com.corundumstudio.socketio.Configuration();
         config.setHostname("localhost");
         config.setPort(ServerPort);
+//		config.setWorkerThreads(5);
 //		config.setOrigin("http://localhost");
 		
 		final SocketIOServer server = new SocketIOServer(config);
@@ -65,20 +78,38 @@ public class App
 		{
 			String input = kb.next();
 			if (input.equalsIgnoreCase("quit"))
+			{
+				System.out.println("Quitting");
 				break;
+			}
 			
 			System.out.println("Unknown command: " + input);
 		}
-        //Thread.sleep(Integer.MAX_VALUE);
+
+		// Interrupt all threads
+		for (Thread thread : Threads.values())
+			thread.interrupt();
+		
+		// Wait for threads to finish
+		for (Thread thread : Threads.values())
+		{
+			try 
+			{
+				thread.join();
+			}
+			catch (InterruptedException e)
+			{
+			}
+		}
 
         server.stop();
 	}
 	
     public static void main( String[] args ) throws InterruptedException
     {
+		// Run game engine threads
 		runGameEngine();
-		
+		// Run socket.io server
 		runSocketServer();
-		
     }
 }

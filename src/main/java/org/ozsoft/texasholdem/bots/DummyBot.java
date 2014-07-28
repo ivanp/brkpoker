@@ -1,4 +1,4 @@
-// This file is part of the 'texasholdem' project, an open source
+	// This file is part of the 'texasholdem' project, an open source
 // Texas Hold'em poker application written in Java.
 //
 // Copyright 2009 Oscar Stigter
@@ -43,9 +43,14 @@ public class DummyBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void joinedTable(TableType type, int bigBlind, List<Player> players) {
+    public void joinedTable(TableType type, int bigBlind, int seatNum, Player player) {
         // Not implemented.
     }
+	
+	@Override
+	public void leavedTable(int seatNum, Player player) {
+		
+	}
 
     /** {@inheritDoc} */
     @Override
@@ -55,13 +60,13 @@ public class DummyBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void actorRotated(Player actor) {
+    public void actorRotated(int seatNum, Player actor) {
         // Not implemented.
     }
 
     /** {@inheritDoc} */
     @Override
-    public void playerUpdated(Player player) {
+    public void playerUpdated(int seatNum, Player player) {
         // Not implemented.
     }
 

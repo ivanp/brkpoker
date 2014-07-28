@@ -232,3 +232,10 @@ div.player_box {
 .player_details.dealer {
     background: url('../img/dealerPuck.png') no-repeat 5px 85px;
 }
+
+
+/* Temporarily disable progress bar animation */
+.progress.active .progress-bar {
+    -webkit-animation: initial;
+    animation: initial;
+}

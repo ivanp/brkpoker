@@ -53,6 +53,8 @@ public class Player {
     /** Last action performed. */
     protected Action action;
 	
+	protected Table table;
+	
     /**
      * Constructor.
      * 
@@ -63,10 +65,11 @@ public class Player {
      * @param client
      *            The client application.
      */
-    public Player(String name, int cash, Client client) {
+    public Player(String name, int cash, Client client, Table table) {
         this.name = name;
         this.cash = cash;
         this.client = client;
+		this.table = table;
 
         hand = new Hand();
 
@@ -81,6 +84,11 @@ public class Player {
     public Client getClient() {
         return client;
     }
+	
+	public Table getTable()
+	{
+		return table;
+	}
 
     /**
      * Prepares the player for another hand.
@@ -256,7 +264,7 @@ public class Player {
      * @return The cloned player.
      */
     public Player publicClone() {
-        Player clone = new Player(name, cash, null);
+        Player clone = new Player(name, cash, null, table);
         clone.hasCards = hasCards;
         clone.bet = bet;
         clone.action = action;

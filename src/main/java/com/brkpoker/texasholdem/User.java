@@ -6,10 +6,17 @@
 
 package com.brkpoker.texasholdem;
 
+import com.brkpoker.texasholdem.webobject.RequestActionObject;
+import static com.brkpoker.texasholdem.App.Tables;
+import com.brkpoker.texasholdem.webobject.PlayerJoinedTableObject;
 import com.corundumstudio.socketio.SocketIOClient;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import org.json.simple.JSONObject;
 import org.ozsoft.texasholdem.Card;
 import org.ozsoft.texasholdem.Player;
 import org.ozsoft.texasholdem.Table;
@@ -25,8 +32,11 @@ public class User implements org.ozsoft.texasholdem.Client
 	private final SocketIOClient client;
 	private String name;
 	private Player player;
-	private int cash = 5000;
-	
+	private int cash = 10000;
+	private Action lastAction;
+	private Object actionLock = new Object();
+	private Table watchingTable;
+			
 	public User(SocketIOClient client)
 	{
 		this.client = client;
@@ -49,16 +59,149 @@ public class User implements org.ozsoft.texasholdem.Client
 		return player;
 	}
 	
-	public Player joinTable(Table table, int seatNum, int buyin) throws NotEnoughCashException, AlreadyPlayingOnOtherTableException
+	public void disconnect()
+	{
+		gotoLobby();
+	}
+	
+	public void watchTable(Table table)
+	{
+		if(null != watchingTable)
+			watchingTable.removeSpectator(this);
+		table.addSpectator(this);
+		watchingTable = table;
+		client.sendEvent("watch", table.getName());
+		repaintTable(table);
+	}
+	
+	public void watchTable(String tableName)
+	{
+		Table table = Tables.get(tableName);
+		if (null != table)
+		{
+			watchTable(table);
+		}
+		else
+		{
+			client.sendEvent("error", "Table "+tableName+" does not exist");
+		}
+	}
+	
+	public void repaintTable(Table table)
+	{
+		Map obj = new HashMap();
+		obj.put("name", table.getName());
+		obj.put("count", table.getPlayersCount());
+		obj.put("max", table.getMaxPlayers());
+		obj.put("bigblind", table.getBigBlind());
+		obj.put("msg", table.getMessage());
+		obj.put("showdown", table.getIsShowdown());
+		// Current actor
+		obj.put("actor", table.getIsShowdown());
+		// Last action
+		obj.put("action", table.getIsShowdown());
+		
+		List players = new ArrayList();
+		for (Map.Entry<Integer, Player> entry : table.getPlayers().entrySet())
+		{
+			int num = entry.getKey();
+			Player player = entry.getValue();
+			Map playerObj = new HashMap();
+			// seat number
+			playerObj.put("num", num);
+			playerObj.put("name", player.getName());
+			playerObj.put("cash", player.getCash());
+			playerObj.put("last_action", player.getAction());
+			playerObj.put("bet", player.getBet());
+			playerObj.put("is_available", false);
+			playerObj.put("is_loading", false);
+			playerObj.put("is_seated", true);
+			playerObj.put("has_cards", player.hasCards());
+			playerObj.put("is_turn", (num == table.getActorPos()));
+			playerObj.put("is_dealer", (num == table.getDealerPos()));
+			if (table.getIsShowdown()) {
+				List cards = new ArrayList<String>();
+				for (Card card : player.getCards())
+					cards.add(card.hashCode());
+				playerObj.put("cards", cards);
+			}
+			
+			players.add(playerObj);
+		}
+		obj.put("players", players);
+		
+		client.sendEvent("game:repaint", obj);
+	}
+	
+	public void gotoLobby()
+	{
+		if (null != watchingTable) 
+		{
+			watchingTable.removeSpectator(this);
+			watchingTable = null;
+		}
+		if (null != player)
+		{
+			player.getTable().removePlayer(player);
+			player = null;
+		}
+	}
+	
+	public void joinTable(Table table, int seatNum, int buyin) 
 	{
 		if (buyin > cash)
-			throw new NotEnoughCashException();
+		{
+			client.sendEvent("error", "Player don't have enough cash to play");
+			return;
+		}
 		else if (null != player)
-			throw new AlreadyPlayingOnOtherTableException();
-		cash -= buyin;
-		Player player = new Player(name, buyin, this);
+		{
+			// Only allow to play on a table
+			player.getTable().removePlayer(player);
+			cash += player.getCash();
+			player = null;
+		}
 		
-		return player;
+		cash -= buyin;
+		player = new Player(name, buyin, this, table);
+		try
+		{
+			table.addPlayer(seatNum, player);
+		}
+		catch (Table.InvalidSeatException e)
+		{
+			client.sendEvent("error", "Invalid seat number: "+seatNum);
+		}
+		catch (Table.SeatAlreadyOccupiedException e)
+		{
+			client.sendEvent("error", "Seat already occupied: "+seatNum);
+		}
+		catch (Table.PlayerNotEnoughCashException e)
+		{
+			client.sendEvent("error", "Player don't have enough buyin to play");
+		}
+		finally
+		{
+			if (!table.isPlaying(player)) {
+				cash += player.getCash();
+				player = null;
+			}
+		}
+	}
+	
+	public void joinTable(String tableName, int seatNum, int buyin)
+	{
+		Table table = Tables.get(tableName);
+		if (table != null)
+		{
+			joinTable(table, seatNum, buyin);
+			// @TODO: send table information
+			// @TODO: repaint table
+		}
+		else
+		{
+			client.sendEvent("error", "Table "+tableName+" does not exist");
+		}
 	}
 	
 	public int getCash()
@@ -87,9 +230,28 @@ public class User implements org.ozsoft.texasholdem.Client
      * @param players
      *            The players at the table (including this player).
      */
-    public void joinedTable(TableType type, int bigBlind, TreeMap<Integer, Player> players)
+    public void joinedTable(TableType type, int bigBlind, int seatNum, Player player)
 	{
-		
+		Map obj = new HashMap();
+		obj.put("num", seatNum);
+		obj.put("name", player.getName());
+		obj.put("cash", player.getCash());
+		obj.put("is_available", false);
+		obj.put("is_loading", false);
+		obj.put("is_seated", true);
+		obj.put("has_cards", false);
+		obj.put("card1", null);
+		obj.put("card2", null);
+		client.sendEvent("player:join", obj);
+	}
+	
+	public void leavedTable(int seatNum, Player player)
+	{
+		// player:leave
+		Map obj = new HashMap();
+		obj.put("num", seatNum);
+		obj.put("name", player.getName());
+		client.sendEvent("player:leave", obj);
 	}
     
     /**
@@ -100,7 +262,7 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void handStarted(Player dealer)
 	{
-		
+		// game:start
 	}
     
     /**
@@ -109,9 +271,12 @@ public class User implements org.ozsoft.texasholdem.Client
      * @param actor
      *            The new actor.
      */
-    public void actorRotated(Player actor)
+    public void actorRotated(int seatNum, Player actor)
 	{
-		
+		// game:rotate
+		Map obj = new HashMap();
+		obj.put("num", seatNum);
+		client.sendEvent("game:rotate", obj);
 	}
     
     /**
@@ -120,9 +285,10 @@ public class User implements org.ozsoft.texasholdem.Client
      * @param player
      *            The player.
      */
-    public void playerUpdated(Player player)
+    public void playerUpdated(int seatNum, Player player)
 	{
-		
+		Map obj = new HashMap();
+		obj.put("num", seatNum);
 	}
     
     /**
@@ -137,7 +303,7 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void boardUpdated(List<Card> cards, int bet, int pot)
 	{
-		
+		// table:update
 	}
     
     /**
@@ -148,7 +314,7 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void playerActed(Player player)
 	{
-		
+		// player:action
 	}
 
     /**
@@ -165,7 +331,29 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public Action act(int minBet, int currentBet, Set<Action> allowedActions)
 	{
-		return Action.ALL_IN;
+		RequestActionObject data = new RequestActionObject(minBet, currentBet, allowedActions.toArray(new String[0]));
+		client.sendEvent("game.reqact", data);
+		synchronized (actionLock) {
+			try
+			{
+				actionLock.wait();
+			}
+			catch (InterruptedException e)
+			{
+			}
+		}
+		return lastAction;
+	}
+	
+	/**
+	 * 
+	 */
+	public void actResponse(Action action)
+	{
+		lastAction = action;
+		synchronized (actionLock) {
+			actionLock.notify();
+		}
 	}
 	
 	public class NotEnoughCashException extends Exception

@@ -10,12 +10,13 @@ import static com.brkpoker.texasholdem.App.TableCount;
 import static com.brkpoker.texasholdem.App.Tables;
 import static com.brkpoker.texasholdem.App.Users;
 import com.brkpoker.texasholdem.webobject.AuthObject;
+import com.brkpoker.texasholdem.webobject.SitObject;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.*;
 import java.util.Map;
-import org.ozsoft.texasholdem.Player;
 import org.ozsoft.texasholdem.Table;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -32,22 +33,37 @@ public class SocketService
 
 		// @TODO: put session ID here
 		String authid = client.getHandshakeData().getSingleUrlParam("authid");
-		System.out.printf("authid: %s\n", authid);
+		System.out.printf("authid: %s\n", authid); 
 
-		String name = String.format("user%d", Users.size()+1);
+		String name = String.format("player %d", Users.size()+1);
 		AuthObject auth = new AuthObject(true, name, 5000);
 		client.sendEvent("auth", auth);
-
+		
 		User user = new User(client);
 		user.setName(name);
 		Users.put(client.getSessionId().toString(), user);
+		
+//		// Test sending object
+//		JSONObject obj = new JSONObject();
+//		obj.put("something", "yeah baby");
+//		int[] numbers = {1, 3, 5};
+//		obj.put("numbers", numbers);
+//		JSONObject objChild = new JSONObject();
+//		objChild.put("name", "Bond");
+//		objChild.put("drink", "Martini");
+//		obj.put("agent", objChild);
+//		client.sendEvent("test13", obj);
 	}
 	
 	@OnDisconnect
 	public void onDisconnectHandler(SocketIOClient client) 
 	{
 		System.out.println("Client: "+client.getSessionId().toString()+" disconnected");
+		
+		User user = Users.get(client.getSessionId().toString());
+		user.disconnect();
 		Users.remove(client.getSessionId().toString());
+		//Users.remove(client.getSessionId().toString());
 		// @TODO: remove from spectators & remove player gracefully
 	}
 	
@@ -55,8 +71,7 @@ public class SocketService
 	public void onNameHandler(SocketIOClient client, String data, AckRequest ackRequest) 
 	{
 		System.out.printf("Received name change: %s\n", data);
-		User user = Users.get(client.getSessionId().toString());
-		user.setName(data);
+		getUser(client).setName(data);
 	}
 	
 	@OnEvent("get:tables")
@@ -83,14 +98,7 @@ public class SocketService
 	public void onWatchHandler(SocketIOClient client, String data, AckRequest ackRequest) 
 	{
 		System.out.printf("Watching table: %s\n", data);
-		
-		Table table = Tables.get(data);
-		if(null != table)
-		{
-			
-		}
-		else
-			client.sendEvent("error", "Table "+data+" does not exist");
+		getUser(client).watchTable(data);
 	}
 	
 	/**
@@ -100,9 +108,9 @@ public class SocketService
 	 * @param ackRequest 
 	 */
 	@OnEvent("sit")
-	public void onSitHandler(SocketIOClient client, String data, AckRequest ackRequest) 
+	public void onSitHandler(SocketIOClient client, SitObject data, AckRequest ackRequest) 
 	{
-		
+		getUser(client).joinTable(data.getTableName(), data.getSeatNum(), data.getBuyIn());
 	}
 	
 	@OnEvent("chat")
@@ -114,5 +122,9 @@ public class SocketService
 		
 	}
 	
-	
+	public User getUser(SocketIOClient client)
+	{
+		User user = Users.get(client.getSessionId().toString());
+		return user;
+	}
 }

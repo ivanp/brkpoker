@@ -52,7 +52,9 @@ public interface Client {
      * @param players
      *            The players at the table (including this player).
      */
-    void joinedTable(TableType type, int bigBlind, TreeMap<Integer, Player> players);
+    void joinedTable(TableType type, int bigBlind, int seatNum, Player player);
+	
+	void leavedTable(int seatNum, Player player);
     
     /**
      * Handles the start of a new hand.
@@ -68,7 +70,7 @@ public interface Client {
      * @param actor
      *            The new actor.
      */
-    void actorRotated(Player actor);
+    void actorRotated(int seatNum, Player actor);
     
     /**
      * Handles an update of this player.
@@ -76,7 +78,7 @@ public interface Client {
      * @param player
      *            The player.
      */
-    void playerUpdated(Player player);
+    void playerUpdated(int seatNum, Player player);
     
     /**
      * Handles an update of the board.

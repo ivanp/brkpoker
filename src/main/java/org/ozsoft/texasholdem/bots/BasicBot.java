@@ -86,9 +86,13 @@ public class BasicBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void joinedTable(TableType type, int bigBlind, TreeMap<Integer, Player> players) {
+    public void joinedTable(TableType type, int bigBlind, int seatNum, Player player) {
         this.tableType = type;
     }
+	
+	@Override
+	public void leavedTable(int seatNum, Player player) {
+	}
 
     /** {@inheritDoc} */
     @Override
@@ -104,7 +108,7 @@ public class BasicBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void actorRotated(Player actor) {
+    public void actorRotated(int seatNum, Player actor) {
         // Not implemented.
     }
 
@@ -116,7 +120,7 @@ public class BasicBot extends Bot {
 
     /** {@inheritDoc} */
     @Override
-    public void playerUpdated(Player player) {
+    public void playerUpdated(int seatNum, Player player) {
         if (player.getCards().length == NO_OF_HOLE_CARDS) {
             this.cards = player.getCards();
         }

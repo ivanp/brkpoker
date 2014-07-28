@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -55,13 +56,19 @@ import org.ozsoft.texasholdem.actions.RaiseAction;
  * 
  * @author Oscar Stigter
  */
-public class Table {
+public class Table implements Runnable {
     
+	protected static final int MAX_PLAYERS = 9;
+			
     /** In fixed-limit games, the maximum number of raises per betting round. */
     protected static final int MAX_RAISES = 3;
     
     /** Whether players will always call the showdown, or fold when no chance. */
     protected static final boolean ALWAYS_CALL_SHOWDOWN = false;
+	
+	protected final int sleepBetweenStage = 2000;
+	
+	protected final String name;
     
     /** Table type (poker variant). */
     protected final TableType tableType;
@@ -73,7 +80,7 @@ public class Table {
     protected final TreeMap<Integer, Player> players;
     
     /** The active players in the current hand. */
-    protected final TreeMap<Integer, Player> activePlayers;
+    protected final List<Player> activePlayers;
 	
 	/** The spectators */
 	protected final List<User> spectators;
@@ -110,6 +117,12 @@ public class Table {
     
     /** Number of raises in the current betting round. */
     protected int raises;
+	
+	private Object waitForPlayerLock = new Object();
+	
+	protected String message = "";
+	
+	protected boolean showdown = false;
     
     /**
      * Constructor.
@@ -117,29 +130,150 @@ public class Table {
      * @param bigBlind
      *            The size of the big blind.
      */
-    public Table(TableType type, int bigBlind) {
+    public Table(String name, TableType type, int bigBlind) {
+		this.name = name;
         this.tableType = type;
         this.bigBlind = bigBlind;
         players = new TreeMap<Integer, Player>();
-        activePlayers = new TreeMap<Integer, Player>();
+        activePlayers = new ArrayList<Player>();
         deck = new Deck();
         board = new ArrayList<Card>();
         pots = new ArrayList<Pot>();
 		spectators = new ArrayList<User>();
     }
+	
+	public String getName()
+	{
+		return name;
+	}
+	
+	public int getBigBlind()
+	{
+		return bigBlind;
+	}
+	
+	public String getMessage()
+	{
+		return message;
+	}
+	
+	public boolean getIsShowdown()
+	{
+		return showdown;
+	}
+	
+	public int getActorPos()
+	{
+		return actorPosition;
+	}
     
+	public int getDealerPos()
+	{
+		return dealerPosition;
+	}
+	
     /**
      * Adds a player.
      * 
      * @param player
      *            The player.
      */
-    public void addPlayer(int seatNum, Player player) {
-        players.put(seatNum, player);
-		for (Player playerToNotify : players.values()) {
-            playerToNotify.getClient().joinedTable(tableType, bigBlind, players);
-        }
+    public void addPlayer(int seatNum, Player player) throws InvalidSeatException, SeatAlreadyOccupiedException, PlayerNotEnoughCashException {
+		synchronized(players) {
+			if (seatNum < 1 || seatNum > 9) 
+				throw new InvalidSeatException();
+			else if (players.containsKey(seatNum))
+				throw new SeatAlreadyOccupiedException();
+			else if (player.getCash() <= 0)
+				throw new PlayerNotEnoughCashException();
+			players.put(seatNum, player);
+			for (Player playerToNotify : players.values()) {
+				// Notify everyone BUT the joined player
+				if (!playerToNotify.equals(player))
+					playerToNotify
+						.getClient()
+						.joinedTable(tableType, bigBlind, seatNum, player);
+			}
+		}
+		
+		// Notify if waiting for players
+		synchronized(waitForPlayerLock) {
+			if (players.size() > 1)
+				waitForPlayerLock.notify();
+		}
+		
+		for (User user : spectators) {
+			user.joinedTable(tableType, bigBlind, seatNum, player);
+		}
     }
+	
+	public void removePlayer(int seatNum)
+	{
+		Player player;
+		synchronized(players) {
+			player = players.remove(seatNum);
+		}
+		
+		for (Player playerToNotify : players.values())
+			playerToNotify.getClient().leavedTable(seatNum, player);
+		for (User user : spectators) {
+			user.leavedTable(seatNum, player);
+		}
+	}
+	
+	public void removePlayer(Player player)
+	{
+		int seatNum = 0;
+		synchronized(players) {
+			for (Map.Entry<Integer, Player> entry : players.entrySet())
+			{
+				if (entry.getValue().equals(player)) 
+				{
+					seatNum = entry.getKey();
+					players.remove(entry.getKey());
+					break;
+				}
+			}
+		}
+		
+		if (seatNum > 0) {
+			for (Player playerToNotify : players.values())
+				playerToNotify.getClient().leavedTable(seatNum, player);
+			for (User user : spectators) {
+				user.leavedTable(seatNum, player);
+			}
+		}
+	}
+	
+	public int getMaxPlayers()
+	{
+		return MAX_PLAYERS;
+	}
+	
+	public Map<Integer, Player> getPlayers()
+	{
+		Map<Integer, Player> players = new TreeMap<Integer, Player>();
+		for (Map.Entry<Integer, Player> entry : players.entrySet())
+		{
+			if (showdown) {
+				players.put(entry.getKey(), entry.getValue());
+			} else {
+				// Hide secret information to other players.
+				players.put(entry.getKey(), entry.getValue().publicClone());
+			}
+		}
+		return players;
+	}
+	
+	public int getPlayersCount()
+	{
+		return players.size();
+	}
+	
+	public boolean isPlaying(Player player)
+	{
+		return players.containsValue(player);
+	}
 	
 	public void addSpectator(User user)
 	{
@@ -150,40 +284,64 @@ public class Table {
 	{
 		spectators.remove(user);
 	}
-    
+	
+	protected void sleep()
+	{
+		try 
+		{
+			Thread.sleep(sleepBetweenStage);
+		} 
+		catch (InterruptedException e)
+		{
+		}
+	}
+	
     /**
      * Main game loop.
      */
     public void run() {
-//        for (Player player : players.values()) {
-//            player.getClient().joinedTable(tableType, bigBlind, players);
-//        }
-        dealerPosition = -1;
-        actorPosition = -1;
-        while (true) {
-            int noOfActivePlayers = 0;
-            for (Player player : players.values()) {
-                if (player.getCash() >= bigBlind) {
-                    noOfActivePlayers++;
-                }
-            }
-            if (noOfActivePlayers > 1) {
-                playHand();
-            } else {
-                break;
-            }
-        }
-        
-        // Game over.
-        board.clear();
-        pots.clear();
-        bet = 0;
-        notifyBoardUpdated();
-        for (Player player : players.values()) {
-            player.resetHand();
-        }
-        notifyPlayersUpdated(false);
-        notifyMessage("Game over.");
+		while(!Thread.currentThread().isInterrupted())
+		{
+			dealerPosition = -1;
+			actorPosition = -1;
+			while (true) {
+				int noOfActivePlayers = 0;
+				for (Player player : players.values()) {
+					if (player.getCash() >= bigBlind) {
+						noOfActivePlayers++;
+					}
+				}
+				if (noOfActivePlayers > 1) {
+					playHand();
+				} else {
+					break;
+				}
+			}
+
+			System.out.println("No more available players, waiting");
+			// Game over.
+			board.clear();
+			pots.clear();
+			bet = 0;
+			notifyBoardUpdated();
+			for (Player player : players.values()) {
+				player.resetHand();
+			}
+			notifyPlayersUpdated(false);
+			notifyMessage("Waiting for players");
+		
+			synchronized(waitForPlayerLock) {
+				try
+				{
+					waitForPlayerLock.wait();
+				}
+				catch (InterruptedException e)
+				{
+					System.out.println("Thread interrupted");
+					break;
+				}
+			}
+		}
     }
     
     /**
@@ -258,12 +416,11 @@ public class Table {
         // Determine the active players.
         activePlayers.clear();
         for (Map.Entry<Integer, Player> entry : players.entrySet()) {
-			int seatNum = entry.getKey();
 			Player player = entry.getValue();
             player.resetHand();
             // Player must be able to afford at least the big blind.
             if (player.getCash() >= bigBlind) {
-                activePlayers.put(seatNum, player);
+                activePlayers.add(player);
             }
         }
         
@@ -286,12 +443,14 @@ public class Table {
         for (Player player : players.values()) {
             player.getClient().handStarted(dealer);
         }
+		
+        notifyPlayersUpdated(false);
+        notifyMessage("New hand, %s is the dealer.", dealer);
+		
 		// spectators
 		for (User user : spectators) {
 			user.handStarted(dealer);
 		}
-        notifyPlayersUpdated(false);
-        notifyMessage("New hand, %s is the dealer.", dealer);
     }
 
     /**
@@ -301,12 +460,14 @@ public class Table {
         actorPosition = (actorPosition + 1) % activePlayers.size();
         actor = activePlayers.get(actorPosition);
         for (Player player : players.values()) {
-            player.getClient().actorRotated(actor);
+            player.getClient().actorRotated(
+					actorPosition, actor);
         }
 		
 		// spectators
 		for (User user : spectators) {
-            user.actorRotated(actor.publicClone());
+            user.actorRotated(actorPosition, 
+					actor.publicClone());
         }
     }
     
@@ -335,7 +496,7 @@ public class Table {
      * Deals the Hole Cards.
      */
     private void dealHoleCards() {
-        for (Player player : activePlayers.values()) {
+        for (Player player : activePlayers) {
             player.setCards(deck.deal(2));
         }
         System.out.println();
@@ -485,7 +646,7 @@ public class Table {
         }
         
         // Reset player's bets.
-        for (Player player : activePlayers.values()) {
+        for (Player player : activePlayers) {
             player.resetBet();
         }
         notifyBoardUpdated();
@@ -623,20 +784,22 @@ public class Table {
             }
             if (doShow) {
                 // Show hand.
-                for (Player player : players.values()) {
-                    player.getClient().playerUpdated(playerToShow);
+                for (Map.Entry<Integer, Player> entry : players.entrySet()) {
+					Player player = entry.getValue();
+                    player.getClient().playerUpdated(entry.getKey(), playerToShow);
                 }
                 notifyMessage("%s has %s.", playerToShow, handValue.getDescription());
             } else {
                 // Fold.
                 playerToShow.setCards(null);
                 activePlayers.remove(playerToShow);
-                for (Player player : players.values()) {
+                for (Map.Entry<Integer, Player> entry : players.entrySet()) {
+					Player player = entry.getValue();
                     if (player.equals(playerToShow)) {
-                        player.getClient().playerUpdated(playerToShow);
+                        player.getClient().playerUpdated(entry.getKey(), playerToShow);
                     } else {
                         // Hide secret information to other players.
-                        player.getClient().playerUpdated(playerToShow.publicClone());
+                        player.getClient().playerUpdated(entry.getKey(), playerToShow.publicClone());
                     }
                 }
                 notifyMessage("%s folds.", playerToShow);
@@ -645,7 +808,7 @@ public class Table {
         
         // Sort players by hand value (highest to lowest).
         Map<HandValue, List<Player>> rankedPlayers = new TreeMap<HandValue, List<Player>>();
-        for (Player player : activePlayers.values()) {
+        for (Player player : activePlayers) {
             // Create a hand with the community cards and the player's hole cards.
             Hand hand = new Hand(board);
             hand.addCards(player.getCards());
@@ -740,14 +903,14 @@ public class Table {
      *            Any arguments.
      */
     protected void notifyMessage(String message, Object... args) {
-        message = String.format(message, args);
+        this.message = String.format(message, args);
         for (Player player : players.values()) {
-            player.getClient().messageReceived(message);
+            player.getClient().messageReceived(this.message);
         }
 		
 		// spectators
 		for (User user : spectators) {
-			user.messageReceived(message);
+			user.messageReceived(this.message);
 		}
     }
     
@@ -790,24 +953,28 @@ public class Table {
      *            Whether we are at the showdown phase.
      */
     protected void notifyPlayersUpdated(boolean showdown) {
+		this.showdown = showdown;
+		
         for (Player playerToNotify : players.values()) {
-            for (Player player : players.values()) {
+            for (Map.Entry<Integer, Player> entry : players.entrySet()) {
+				Player player = entry.getValue();
                 if (!showdown && !player.equals(playerToNotify)) {
                     // Hide secret information to other players.
                     player = player.publicClone();
                 }
-                playerToNotify.getClient().playerUpdated(player);
+                playerToNotify.getClient().playerUpdated(entry.getKey(), player);
             }
         }
 		
 		// spectators
 		for (User userToNotify : spectators) {
-			for (Player player : players.values()) {
+			for (Map.Entry<Integer, Player> entry : players.entrySet()) {
+				Player player = entry.getValue();
 				if (showdown) {
-					userToNotify.playerUpdated(player);
+					userToNotify.playerUpdated(entry.getKey(), player);
 				} else {
 					// Hide secret information to other players.
-					userToNotify.playerUpdated(player.publicClone());
+					userToNotify.playerUpdated(entry.getKey(), player.publicClone());
 				}
 			}
 				
@@ -829,4 +996,8 @@ public class Table {
         }
     }
     
+	public class TableJoinException extends Exception {}
+	public class InvalidSeatException extends TableJoinException {}
+	public class SeatAlreadyOccupiedException extends TableJoinException {}
+	public class PlayerNotEnoughCashException extends TableJoinException {}
 }
