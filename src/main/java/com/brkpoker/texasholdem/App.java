@@ -61,6 +61,10 @@ public class App
 		com.corundumstudio.socketio.Configuration config = new com.corundumstudio.socketio.Configuration();
         config.setHostname("localhost");
         config.setPort(ServerPort);
+		SocketConfig socketConfig = new SocketConfig();
+		socketConfig.setSoLinger(60);
+		socketConfig.setReuseAddress(true);
+		config.setSocketConfig(socketConfig);
 //		config.setWorkerThreads(5);
 //		config.setOrigin("http://localhost");
 		

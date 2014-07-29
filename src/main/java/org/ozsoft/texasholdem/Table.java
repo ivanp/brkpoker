@@ -169,7 +169,10 @@ public class Table implements Runnable {
 	
 	public int getActorSeatNum()
 	{
-		return actor.getSeatNum();
+		if (null != actor)
+			return actor.getSeatNum();
+		else
+			return -1;
 	}
     
 	public int getDealerSeatNum()
