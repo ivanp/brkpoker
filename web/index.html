@@ -3,7 +3,6 @@
         <meta charset="utf-8">
 
         <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"/>
-        <link href="//cdn.rawgit.com/prajwalkman/angular-slider/v0.1.6/angular-slider.css" rel="stylesheet"/>
         <link href="css/main.css" rel="stylesheet"/>
 
     </head>
@@ -76,10 +75,10 @@
 
                         <div class="row">
                             
-                            <player-panel player="players[8]"></player-panel>
-                            <player-panel player="players[9]"></player-panel>
-                            <player-panel player="players[1]"></player-panel>
-                            <player-panel player="players[2]"></player-panel>
+                            <player-panel player="players[8]" sit="sit(8)"></player-panel>
+                            <player-panel player="players[9]" sit="sit(9)"></player-panel>
+                            <player-panel player="players[1]" sit="sit(1)"></player-panel>
+                            <player-panel player="players[2]" sit="sit(2)"></player-panel>
                             
                         </div>
                         <div id="board_panel" class="row">
@@ -118,11 +117,11 @@
                       
                         <div class="row">
                             
-                            <player-panel player="players[7]"></player-panel>
-                            <player-panel player="players[6]"></player-panel>
-                            <player-panel player="players[5]"></player-panel>
-                            <player-panel player="players[4]"></player-panel>
-                            <player-panel player="players[3]"></player-panel>
+                            <player-panel player="players[7]" sit="sit(7)"></player-panel>
+                            <player-panel player="players[6]" sit="sit(6)"></player-panel>
+                            <player-panel player="players[5]" sit="sit(5)"></player-panel>
+                            <player-panel player="players[4]" sit="sit(4)"></player-panel>
+                            <player-panel player="players[3]" sit="sit(3)"></player-panel>
                             
                         </div>
 
@@ -158,7 +157,7 @@
                         
                         <div class="action_buttons" class="row" ng-show="is_action">
                             <div id="slider">
-                                <slider floor="20" ng-model-low="slider_min" ng-model-max="slider_max" step="50" precision="0" ng-model="bet_amount"></slider>
+<!--                                <slider floor="20" ng-model-low="slider_min" ng-model-max="slider_max" step="50" precision="0" ng-model="bet_amount"></slider>-->
                             </div>
                             
                             <button class="btn btn-warning" ng-click="act('All-in')" ng-show="isActionAllowed('All-in')">All-in</button>
@@ -167,7 +166,7 @@
                             <form class="form-inline" role="form">
                                 
                                 <div class="input-group" ng-show="isActionAllowed('Raise')">
-                                    <input id="raise_amount" type="text" class="form-control" ng-model="raise_amount">
+                                    <input id="raise_amount" type="text" class="form-control" ng-model="bet_amount">
                                     <span class="input-group-btn">
                                         <button class="btn btn-success" ng-click="act('Raise')">Raise</button>
                                     </span>
@@ -176,17 +175,12 @@
                                 <div class="input-group" ng-show="isActionAllowed('Bet')">
                                     <input id="raise_amount" type="text" class="form-control" ng-model="bet_amount">
                                     <span class="input-group-btn">
-                                        <button class="btn btn-success" ng-click="act()" ng-show="isActionAllowed('Bet')">Bet</button>
+                                        <button class="btn btn-success" ng-click="act('Bet')" ng-show="isActionAllowed('Bet')">Bet</button>
                                     </span>
                                 </div>
 
                             <button class="btn btn-info" ng-click="act('Check')" ng-show="isActionAllowed('Check')">Check</button>
                             <button class="btn btn-info" ng-click="act('Call')" ng-show="isActionAllowed('Call')">Call</button>
-                            
-                            
-
-                            
-                            
 
                             <button class="btn btn-danger" ng-click="act('Fold')" ng-show="isActionAllowed('Fold')">Fold</button>
                             </form>
@@ -194,22 +188,48 @@
                         </div>
                     </div>
                     <div class="col-md-2">
-                    <!-- @TODO: Chat -->
+                    
+                        <div id="chat_container">
+                            <div id="chat_bg"></div>
+                            <div id="chat_content" class="well well-sm">
+        <small>
+                            <p ng-repeat="chat_msg in chat_messages track by $index">
+                                <strong>{{chat_msg[0]}}</strong>: {{chat_msg[1]}}
+                            </p>
+
+
+        </small>
+            </div>
+                            <form class="form-inline" role="form">
+                                <div class="input-group">
+                                    <input id="raise_amount" type="text" class="form-control" ng-model="chat_line">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-success" ng-click="newmsg()">Send</button>
+                                    </span>
+                                </div>
+                                
+                            </form>
+                        </div>
+                        
                     </div>
                 </div>
             </div>
         </nav>
         
         
+<!--        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.js"></script>-->
+        
         <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.20/angular.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.20/angular-sanitize.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/bower-angular-translate/2.0.1/angular-translate.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.11.0/ui-bootstrap-tpls.js"></script>
-        <script src="//cdn.rawgit.com/prajwalkman/angular-slider/v0.1.6/angular-slider.js"></script>
+        <!--<script src="//cdn.rawgit.com/angular-ui/ui-slider/v0.0.2/src/slider.js"></script>-->
         <script src="//cdn.rawgit.com/m-e-conroy/angular-dialog-service/v5.1.1/dialogs.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
         <script src="//cdn.rawgit.com/btford/angular-socket-io/v0.6.0/socket.js"></script>
         <script src="//cdn.rawgit.com/durated/angular-scroll/v0.6.1/angular-scroll.js"></script>
+        
         <script src="js/app.js"></script>
     </body>
 </html>

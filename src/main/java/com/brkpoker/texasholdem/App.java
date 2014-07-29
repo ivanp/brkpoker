@@ -20,8 +20,8 @@ public class App
 	public static final int TableCount = 1;
 	
 	public static final int BigBlind = 400;
-	public static final int MinBuy = 200;
-	public static final int MaxBuy = 400;
+	public static final int MinBuy = 5000;
+	public static final int MaxBuy = 80000;
 	
 	// This is where the tables
 	//public static List<Table> Tables;

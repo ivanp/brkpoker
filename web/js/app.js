@@ -22,6 +22,7 @@
         return angular.element(document.querySelector('[ng-app=brkPokerApp]')).scope();
     }
     
+    // angular.element(document.querySelector('[ng-controller=MainController]')).scope()
     function getControllerScope(ctrl) {
         return angular.element(document.querySelector('[ng-controller='+ctrl+']')).scope();
     }
@@ -31,8 +32,8 @@
         'ui.bootstrap', 
         'dialogs.main', 
         'btford.socket-io',
-        'uiSlider',
         'duScroll'
+        // 'ui.slider'
     ]);
     
     BrkPokerApp.factory('socket', function (socketFactory) {
@@ -42,6 +43,8 @@
             'reconnection delay' : 2000
         });
                 
+        // The library will stopped on first 50x http request
+        // this hack will force it to reconnect.
         socket.on('error', function(err) {
             if (!socket.socket.reconnecting) {
                 socket.socket.options['max reconnection attempts'] = Infinity;
@@ -50,7 +53,7 @@
         });
         
         socket.on('reconnecting', function(delay, attempts) {
-            console.log('Reconnecting attempt #'+attempts+', delay for '+delay+'ms');
+//            console.log('Reconnecting attempt #'+attempts+', delay for '+delay+'ms');
         });
         
         return socketFactory({
@@ -71,8 +74,10 @@
         $scope.is_connected = false;
         $scope.is_playing = false;
         $scope.is_watching = false;
-
-        $scope.is_debug = true;
+	$scope.dc_count = 0;
+        $scope.chat_line = "";
+        $scope.name = "";
+        $scope.is_debug = false;
         
         // Access players from getPlayer(seat_num)
         $scope.players = [null];
@@ -84,15 +89,20 @@
         resetTable();
 
         if($scope.is_debug)  {
-            $scope.is_connected = true;
-            $scope.is_watching = true;
+            $timeout(function() {
+                $scope.is_connected = true;
+                $scope.is_watching = false;
+                $scope.is_playing = true;
+                $scope.is_action = true;
+                $scope.allowed_actions = ["Raise", "Check", "Fold", "All-in"];
+		$scope.community_cards = [13, 14, 15, -1, null];
+            }, 1000);
         }
         
         var imagesUploaded = 0;
         var imagesStorage = [];
-        
-        
-        console.log("Main controller initialized");
+        var addActionLogTimeout = false;
+        var addChatTimeout = false;
         
         
         // Load wait dialog
@@ -110,25 +120,6 @@
         }, 100);
 
         
-        function connect() {
-            console.log("Loading is " + ($scope.is_loading ? 'on' : 'off'));
-            if ($scope.is_connected || $scope.is_loading)
-                return;
-            
-            var header, msg;
-            if ($scope.dc_count) {
-                header = "BRKPoker";
-                msg = "You were disconnected from the server, please wait while we're trying to reconnect."
-            } else {
-                header = "BRKPoker";
-                msg = "Connecting to server, please wait."
-            }
-            dialogs.wait(header, msg, 5, {
-                backdrop: 'static'
-            });
-        }
-
-
         /* Fields Monitors */
         
         if(!$scope.is_debug) 
@@ -140,16 +131,11 @@
             }
         });
 
-        $scope.$watch('name', function(newVal) {
-            if ($scope.is_connected) {
+        $scope.$watch('name', function(newVal, oldVal) {
+            if ((oldVal != "") && $scope.is_connected) {
                 socket.emit('set:name', $scope.name);
             }
         });
-        // TESTING
-        // $scope.is_connected = true;
-        // $scope.is_playing = true;
-        // $scope.allowed_actions = ["Raise", "Check", "Fold", "All-in"];
-
         
         /* Sockets Messages Handlers */
 
@@ -209,6 +195,8 @@
 
             var player = getPlayer(data.num);
             player.update(data);
+	    player.is_loading = false;
+	    $scope.seat_num = data.num;
 
             addActionLog('Client is now playing as '+data.name);
         });
@@ -233,7 +221,7 @@
         socket.on('player:leave', function(data) {
             var player = getPlayer(data.num);
             player.reset();
-
+	    player.is_available = !$scope.is_playing;
             addActionLog('Player '+data.name+' leaved table');
         });
         
@@ -244,6 +232,8 @@
             var player = getPlayer(data.num);
             player.last_action = data.last_action;
             player.bet = data.bet;
+	    if(data.last_action == "Fold")
+		player.cards = [null, null];
 
             addActionLog("Action by "+player.name+": "+data.last_action);
         });
@@ -255,6 +245,7 @@
             var player = getPlayer(data.num);
             addActionLog("Player "+player.name+" disconnected");
             player.reset();
+	    player.is_available = !$scope.is_playing;
         });
         
         /**
@@ -263,6 +254,10 @@
         socket.on('player:update', function(data) {
             var player = getPlayer(data.num);
             player.update(data);
+	    if(data.last_action == "fold")
+		player.cards = [null, null];
+	    else if (player.has_cards && data.cards.length == 0)
+		player.cards = [-1, -1];
         });
 
         /**
@@ -282,6 +277,12 @@
                 is_dealer: true,
                 is_turn: true
             });
+	    $scope.community_cards = [null, null, null, null, null];
+	    for (var num = 1; num <= 9; num++) {
+		var player = getPlayer(num);
+		if (player.is_playing)
+		    player.last_action = "";
+	    }
 
             addActionLog("Game started, dealer: "+dealer.name);
         });
@@ -290,6 +291,7 @@
          * Repaint table
          */
         socket.on('game:repaint', function(data) {
+            resetTable();
             $scope.table = data.name;
             $scope.min = data.min;
             $scope.max = data.max;
@@ -298,6 +300,7 @@
             $scope.message = data.msg;
             $scope.bet = data.bet;
             $scope.pot = data.pot;
+	    $scope.seat_num = 0;
             $scope.community_cards = [null, null, null, null, null];
             if ($scope.cards != undefined) {
                 for (var i = 0; i < data.cards.length; i++)
@@ -307,21 +310,26 @@
             addActionLog('Table '+data.name+' repainted');
         });
 
+	/**
+	 * On game:rotate
+	 */
         socket.on('game:rotate', function(data) {
-            getPlayer($scope.actor_pos).is_turn = false;
+	    if ($scope.actor_pos > 0)
+		getPlayer($scope.actor_pos).is_turn = false;
             getPlayer(data.num).is_turn = true;
             $scope.actor_pos = data.num;
 
-             addActionLog("Player rotated to seat "+data.num);
+	    console.log("Player rotated to seat "+data.num);
         });
 
         socket.on('game:update', function(data) {
             $scope.bet = data.bet;
             $scope.pot = data.pot;
-            for (var i = 0; i < data.cards.length; i++)
-                $scope.community_cards[i] = data.cards[i];
+	    
+	    for (var i = 0; i < data.cards.length; i++)
+		$scope.community_cards[i] = data.cards[i];
 
-            addActionLog('Cards updated');
+            console.log('Cards updated');
         });
         
         /**
@@ -329,11 +337,13 @@
          */
         socket.on('game:act', function(data) {
             $scope.min_bet = data.min;
-            $scope.bet_amount = data.bet;
+            $scope.bet_amount = data.min;
             $scope.allowed_actions = data.actions;
             $scope.is_action = true;
+	    // Clear last action
+	    getPlayer($scope.seat_num).last_action = "";
 
-            addActionLog('Request action to player');
+            console.log('Request action to player');
         });
         
             
@@ -346,7 +356,7 @@
         });
 
         socket.on('chat', function(data) {
-            addActionLog('CHAT <'+data.name+'>: '+data.msg);
+            newChatMsg(data.name, data.msg);
         });
         
         socket.on('msg', function(data) {
@@ -367,8 +377,6 @@
             console.log('Socket error');
         });
 
-
-
         $scope.isInGame = function() {
             var is_in_game = $scope.is_connected && ($scope.is_watching || $scope.is_playing);
             console.log("I am " + (is_in_game ? "in" : "not in") + " game");
@@ -380,30 +388,59 @@
         };
 
         $scope.act = function(action) {
+	    $scope.is_action = false;
+	    console.log("Action: "+action);
             var obj = {};
             obj.name = action;
             if(action == "Bet" || action == "Raise")
                 obj.amount = $scope.bet_amount;
-            socket.emit('act')
+            socket.emit('act', obj);
         };
 
         $scope.sit = function(num) {
-            console.log("Sitting at table + "+num);
+            console.log("Sitting at table + "+num+" min="+$scope.min+" max="+$scope.max);
 
-            // var player = getPlayer(num);
-            // var sitObj = {"num": this.num, table: $scope.table};
-
-            // socket.emit("sit", this.num);
-
-
-            var dlg = dialogs.create('player_buyin.html','buyinDialogCtrl',{},'sm');
+            var dlg = dialogs.create('player_buyin.html?','buyinDialogCtrl',{min: $scope.min, max: $scope.max, amount: $scope.min},'sm');
             dlg.result.then(function(buyin){
                 console.log("Buyin "+buyin);
+		var player = getPlayer(num);
+		player.is_loading = true;
+		for (var i = 1; i <= 9; i++) {
+		    var player = getPlayer(i);
+		    if (i != num && !player.is_seated)
+			player.is_available = false;
+		}
+                
+                socket.emit('sit', {table: $scope.table, "num": num, buy: buyin});
             },function(){
                 console.log("Cancelling buyin");
             });
         };
+        
+        $scope.newmsg = function() {
+            console.log("New chat message");
+            newChatMsg($scope.name, $scope.chat_line);
+            socket.emit('chat', $scope.chat_line);
+            $scope.chat_line = "";
+        };
 
+        function connect() {
+            console.log("Loading is " + ($scope.is_loading ? 'on' : 'off'));
+            if ($scope.is_connected || $scope.is_loading)
+                return;
+            
+            var header, msg;
+            if ($scope.dc_count) {
+                header = "BRKPoker";
+                msg = "You were disconnected from the server, please wait while we're trying to reconnect."
+            } else {
+                header = "BRKPoker";
+                msg = "Connecting to server, please wait."
+            }
+            dialogs.wait(header, msg, 5, {
+                backdrop: 'static'
+            });
+        }
         
         function loadImages() {
             // Put all images here
@@ -459,13 +496,10 @@
 
         function resetTable() {
             $scope.bet = 0;
-            // Generate guest name
-            $scope.name = "";
             $scope.table = "";
             
             $scope.is_action = false;
             $scope.mode = ""; // "play" or "watch"
-            $scope.dc_count = 0;
             $scope.message = "";
             $scope.cash = 0; // player chips
             $scope.min = 0;
@@ -488,13 +522,32 @@
             $scope.buy_in = 0;
 
             $scope.action_logs = [];
+            $scope.chat_messages = [];
 
             for (var num = 1; num <= 9; num++) {
                 getPlayer(num).reset();
             }
         }
 
-        var addActionLogTimeout = false;
+        function newChatMsg(name, msg) {
+            $scope.chat_messages.push([name, msg]);
+            console.log("CHAT: "+msg);
+
+            if (!addChatTimeout)
+            {
+                addChatTimeout = true;
+                $timeout(function() {
+                    var el = document.getElementById('chat_content');
+                    var box = angular.element(el);
+                    var real_height = el.scrollHeight;
+                    if ((el.scrollTop + el.offsetHeight) < real_height)
+                        box.scrollTop(real_height, 500);
+                    addChatTimeout = false;
+                }, 200);
+                
+            }
+        }
+        
         function addActionLog(msg) {
             $scope.action_logs.push(msg);
             console.log("LOG: "+msg);
@@ -512,19 +565,33 @@
                 }, 200);
                 
             }
-                
-            
         }
 
-        
-        
+        /**
+         * Creates a player object
+         * @param int num
+         * @returns {_L63.createPlayerPanel.tbl_info}
+         */
         function createPlayerPanel(num) {
             var tbl_info = {
                 "num": num,
                 sclass: "player_box col-md-2",
-                sit: function(){
-                    $scope.sit(num);
-                },
+//                sit: function(){
+//                    var dlg = dialogs.create('player_buyin.html?',
+//                        'buyinDialogCtrl',
+//                        {min: $scope.min, max: $scope.max},
+//                        'sm'
+//                    );
+//                    dlg.result.then(function(buyin){
+//                        this.is_loading = true;
+//                        console.log("Buyin "+buyin);
+//
+//                        socket.emit('sit', {table: $scope.table, "num": num, buy: buyin});
+//                    },function(){
+//			this.is_loading = false;
+//                        console.log("Cancelling buyin");
+//                    });
+//                },
                 update: function(data) {
                     for (var key in data) {
                         this[key] = data[key];
@@ -573,19 +640,23 @@
             return tbl_info;
         }
 
+        /**
+         * Get player instance
+         * @param {type} num
+         * @returns {unresolved}
+         */
         function getPlayer(num) {
             return $scope.players[num];
         }
-
         
+        console.log("Main controller initialized");
     });
-
+    
 
     BrkPokerApp.controller('buyinDialogCtrl',function($scope,$modalInstance,data){
         //-- Variables --//
 
-        $scope.buyin = 0;
-        $scope.buy = {amount : 0};
+        $scope.buy = data;
 
         //-- Methods --//
         
@@ -603,6 +674,19 @@
                 || angular.equals($scope.buy.amount,'')))
                 $scope.save();
         };
+        
+        $scope.slider = {
+            'options': {
+		start: function (event, ui) { 
+                    console.log('Slider start');
+                } 
+            },
+            stop: function (event, ui) { 
+                console.log('Slider stop'); 
+            }
+        }
+        
+        
     }) // end controller(customDialogCtrl)
 
     
@@ -610,33 +694,37 @@
         return {
             restrict: 'E',
             scope: {
-                player: '='
+                player: '=',
+		sit: '&'
             },
-            templateUrl: 'player_panel.html'
+            templateUrl: 'player_panel.html',
+	    controller: function($scope) {
+		$scope.player.controller = $scope;
+		
+		$scope.reset = function() {
+		    
+		}
+	    },
+	    link: function(scope, elem, attrs) {
+		
+	    }
         };
     });
     
     BrkPokerApp.directive('cardImage', function() {
         return {
-            restrict: 'AE',
+            restrict: 'E',
             replace: true,
             scope: {
                 ngCard: '='
             },
-            template: '<img ng-src="{{ngCardImg}}"/>'
+            template: '<img ng-src="{{img(ngCard)}}"/>'
             ,
             controller: ['$scope', function($scope) {
-                    // Default
-                    $scope.ngCardImg = getCardImg(null);
+		    $scope.img = function(card) {
+			return getCardImg(card);
+		    }
             }]
-            ,
-            "link": function(scope, elem, attrs, ctrl) {
-                scope.$watch('ngCard', function(newVal) {
-                    if (newVal) {
-                        scope.ngCardImg = getCardImg(scope.ngCard);
-                    }
-                });
-            }
         }
     });
     

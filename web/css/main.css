@@ -43,7 +43,6 @@ body {
     opacity: 0.2; /* CSS3 */
 }
 
-
 #action_log_content {
     position: absolute;
     /*left: 0;*/
@@ -55,7 +54,33 @@ body {
     color: white;
 }
 
-#action_log_content p {
+#action_log_container {
+    width: 210px;
+    height: 140px;
+    margin-bottom: 8px;
+}
+
+#chat_bg {
+    width: 210px;
+    height: 140px;
+    background-color: #000;
+    filter:alpha(opacity=20); /* IE */
+    -moz-opacity:0.2; /* Mozilla */
+    opacity: 0.2; /* CSS3 */
+}
+
+#chat_content {
+    position: absolute;
+    /*left: 0;*/
+    top: 0px;
+    width: 210px;
+    height: 140px;
+    overflow-y: scroll;
+    background: transparent;
+    color: white;
+}
+
+#chat_content p {
     margin-bottom: 4px;
 }
 
@@ -309,4 +334,8 @@ div.player_box {
 .progress.active .progress-bar {
     -webkit-animation: initial;
     animation: initial;
+}
+
+input#buyin {
+    text-align:right;
 }

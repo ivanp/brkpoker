@@ -6,22 +6,19 @@
 
 package com.brkpoker.texasholdem;
 
-import com.brkpoker.texasholdem.webobject.RequestActionObject;
 import static com.brkpoker.texasholdem.App.Tables;
-import com.brkpoker.texasholdem.webobject.PlayerJoinedTableObject;
 import com.corundumstudio.socketio.SocketIOClient;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import org.ozsoft.texasholdem.Card;
 import org.ozsoft.texasholdem.Player;
 import org.ozsoft.texasholdem.Table;
 import org.ozsoft.texasholdem.TableType;
 import org.ozsoft.texasholdem.actions.Action;
-import org.json.simple.*;
+import org.ozsoft.texasholdem.Client;
 
 /**
  *
@@ -52,6 +49,11 @@ public class User implements org.ozsoft.texasholdem.Client
 	public String getName()
 	{
 		return name;
+	}
+	
+	public SocketIOClient getSocket()
+	{
+		return client;
 	}
 	
 	public Player getPlayer()
@@ -148,6 +150,9 @@ public class User implements org.ozsoft.texasholdem.Client
 		try
 		{
 			table.addPlayer(seatNum, player);
+			table.removeSpectator(this);
+			watchingTable = null;
+			System.out.printf("Successfully joined table: %s at seat %d\n", table.getName(), seatNum);
 			// Confirm client
 			client.sendEvent("sit", getPlayerObjectData(player));
 		}
@@ -259,7 +264,7 @@ public class User implements org.ozsoft.texasholdem.Client
 	{
 		// game:rotate
 		Map obj = new HashMap();
-		obj.put("num", player.getSeatNum());
+		obj.put("num", actor.getSeatNum());
 		client.sendEvent("game:rotate", obj);
 	}
     
@@ -309,9 +314,14 @@ public class User implements org.ozsoft.texasholdem.Client
 		Action action = player.getAction();
 		obj.put("bet", player.getBet());
 		obj.put("action", action);
-		obj.put("last_action", action.getName().toLowerCase());
-		if (action.getName()=="Bet" || action.getName()=="Raise")
-			obj.put("amount", action.getAmount());
+		String last_action = "";
+		if (null != action) {
+			last_action = action.getName();
+			if (action.getName()=="Bet" || action.getName()=="Raise")
+				obj.put("amount", action.getAmount());
+		}
+		obj.put("last_action", last_action);
+			
 		client.sendEvent("player:act", obj);
 	}
 
@@ -386,6 +396,19 @@ public class User implements org.ozsoft.texasholdem.Client
 			for (User user : player.getTable().getSpectators()) {
 				user.chatReceived(player, msg);
 			}
+		} else if (null != watchingTable) {
+			
+			Map obj = new HashMap();
+			obj.put("name", name);
+			obj.put("msg", msg);
+		
+			for (Player playerToNotify : watchingTable.getPlayers().values()) {
+				User user = (User)playerToNotify.getClient();
+				user.getSocket().sendEvent("chat", obj);
+			}
+			for (User user : watchingTable.getSpectators())
+				if (!user.equals(this))
+					user.getSocket().sendEvent("chat", obj);
 		}
 	}
 	
@@ -408,7 +431,11 @@ public class User implements org.ozsoft.texasholdem.Client
 		obj.put("num", seatNum);
 		obj.put("name", player.getName());
 		obj.put("cash", player.getCash());
-		obj.put("last_action", player.getAction().toString().toLowerCase());
+		Action action = player.getAction();
+		String last_action = "";
+		if (action != null)
+			last_action = player.getAction().toString().toLowerCase();
+		obj.put("last_action", last_action);
 		obj.put("bet", player.getBet());
 		obj.put("is_available", false);
 		obj.put("is_loading", false);

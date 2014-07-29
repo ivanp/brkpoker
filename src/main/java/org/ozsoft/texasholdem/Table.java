@@ -102,7 +102,7 @@ public class Table implements Runnable {
     
     /** The acting player. */
     protected Player actor;
-
+	
     /** The minimum bet in the current hand. */
     protected int minBet;
     
@@ -126,6 +126,9 @@ public class Table implements Runnable {
 	
 	protected final int minBuy;
 	protected final int maxBuy;
+
+	protected Player smallBlindPlayer;
+	protected Player bigBlindPlayer;
     
     /**
      * Constructor.
@@ -197,7 +200,10 @@ public class Table implements Runnable {
     
 	public int getDealerSeatNum()
 	{
-		return dealer.getSeatNum();
+		if (null != dealer)
+			return dealer.getSeatNum();
+		else
+			return -1;
 	}
 	
 	public List<Card> getBoard()
@@ -237,7 +243,8 @@ public class Table implements Runnable {
 		}
 		
 		for (User user : spectators) {
-			user.joinedTable(tableType, bigBlind, seatNum, player);
+			if (!user.equals(player.getClient())) 
+				user.joinedTable(tableType, bigBlind, seatNum, player);
 		}
     }
 	
@@ -324,10 +331,12 @@ public class Table implements Runnable {
 		spectators.remove(user);
 	}
 	
-	protected void sleep()
+	protected void sleep(int ms)
 	{
 		try 
 		{
+			if (ms < -1)
+				ms = sleepBetweenStage;
 			Thread.sleep(sleepBetweenStage);
 		} 
 		catch (InterruptedException e)
@@ -343,6 +352,8 @@ public class Table implements Runnable {
 		{
 			dealerPosition = -1;
 			actorPosition = -1;
+//			smallBlindPosition = -1;
+//			bigBlindPosition = -1;
 			while (true) {
 				int noOfActivePlayers = 0;
 				for (Player player : players.values()) {
@@ -441,6 +452,8 @@ public class Table implements Runnable {
                 }
             }
         }
+		
+		sleep(3000);
     }
     
     /**

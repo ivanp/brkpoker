@@ -6,13 +6,21 @@
 <div class="modal-body">
     <ng-form name="nameDialog" novalidate role="form">
         <div class="form-group input-group-lg" ng-class="{true: 'has-error'}[nameDialog.buy.amount.$dirty && nameDialog.buy.amount.$invalid]">
-            <label class="control-label" for="course">Name:</label>
-            <input type="text" class="form-control" name="buyin" id="buyin" ng-model="buy.amount" ng-keyup="hitEnter($event)" required>
+            <label class="control-label" for="course">Buy In:</label>
+            <input type="number" min="{{buy.min}}" max="{{buy.max}}" required class="form-control" name="buy.amount" id="buyin" ng-model="buy.amount" ng-keyup="hitEnter($event)" >
+            
+<!--            <div id="buyin_slider">
+                <div ui-slider="slider.options" 
+     min="0" 
+     max="50" 
+     ng-model="buy.amount"></div>
+            </div>-->
+            
             <span class="help-block">Enter how much cash you want to buy</span>
         </div>
     </ng-form>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-default" ng-click="cancel()">Cancel</button>
-    <button type="button" class="btn btn-primary" ng-click="save()" ng-disabled="(nameDialog.$dirty && nameDialog.$invalid) || nameDialog.$pristine">OK</button>
+    <button type="button" class="btn btn-primary" ng-click="save()" ng-disabled="(nameDialog.$dirty && nameDialog.$invalid)">OK</button>
 </div>

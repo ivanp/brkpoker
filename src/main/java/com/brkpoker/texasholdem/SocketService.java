@@ -35,13 +35,16 @@ public class SocketService
 		String authid = client.getHandshakeData().getSingleUrlParam("authid");
 		System.out.printf("authid: %s\n", authid); 
 
-		String name = String.format("player %d", Users.size()+1);
-		AuthObject auth = new AuthObject(true, name, 5000);
-		client.sendEvent("auth", auth);
-		
 		User user = new User(client);
-		user.setName(name);
-		Users.put(client.getSessionId().toString(), user);
+		synchronized (Users) {
+			String name = String.format("Player %d", Users.size()+1);
+			user.setName(name);
+			Users.put(client.getSessionId().toString(), user);
+		}
+		
+		AuthObject auth = new AuthObject(true, user.getName(), user.getCash());
+		
+		client.sendEvent("auth", auth);
 	}
 	
 	@OnDisconnect
@@ -99,6 +102,7 @@ public class SocketService
 	@OnEvent("sit")
 	public void onSitHandler(SocketIOClient client, SitObject data, AckRequest ackRequest) 
 	{
+		System.out.printf("Received request watching table: %s at seat %d\n", data.getTable(), data.getNum());
 		getUser(client).joinTable(data.getTable(), data.getNum(), data.getBuy());
 	}
 	
