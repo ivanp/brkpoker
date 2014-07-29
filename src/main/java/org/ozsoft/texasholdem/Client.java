@@ -115,4 +115,5 @@ public interface Client {
     Action act(int minBet, int currentBet, Set<Action> allowedActions);
 
 	void playerWon(Player player, int amount);
+	void chatReceived(Player player, String msg);
 }

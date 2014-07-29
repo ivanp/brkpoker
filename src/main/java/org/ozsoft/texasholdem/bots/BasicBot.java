@@ -218,4 +218,10 @@ public class BasicBot extends Bot {
 	{
 		
 	}
+	
+	@Override
+	public void chatReceived(Player player, String msg)
+	{
+		
+	}
 }

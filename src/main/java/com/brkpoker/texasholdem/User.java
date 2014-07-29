@@ -21,6 +21,7 @@ import org.ozsoft.texasholdem.Player;
 import org.ozsoft.texasholdem.Table;
 import org.ozsoft.texasholdem.TableType;
 import org.ozsoft.texasholdem.actions.Action;
+import org.json.simple.*;
 
 /**
  *
@@ -31,7 +32,7 @@ public class User implements org.ozsoft.texasholdem.Client
 	private final SocketIOClient client;
 	private String name;
 	private Player player;
-	private int cash = 10000;
+	private int cash = 1000000;
 	private Action lastAction;
 	private Object actionLock = new Object();
 	private Table watchingTable;
@@ -65,6 +66,7 @@ public class User implements org.ozsoft.texasholdem.Client
 	
 	public void watchTable(Table table)
 	{
+		System.out.printf("Receiving request to watch table %s\n", table.getName());
 		if(null != watchingTable)
 			watchingTable.removeSpectator(this);
 		table.addSpectator(this);
@@ -89,10 +91,12 @@ public class User implements org.ozsoft.texasholdem.Client
 	
 	public void repaintTable(Table table)
 	{
-		System.out.println("Repainting table");
+		System.out.println("Repainting table "+table.getName());
 		Map obj = new HashMap();
 		obj.put("name", table.getName());
-		obj.put("max", table.getMaxPlayers());
+		obj.put("min", table.getMinBuy());
+		obj.put("max", table.getMaxBuy());
+		obj.put("small", table.getSmallBlind());
 		obj.put("big", table.getBigBlind());
 		obj.put("msg", table.getMessage());
 		obj.put("bet", table.getCurrentBet());
@@ -369,6 +373,29 @@ public class User implements org.ozsoft.texasholdem.Client
 		synchronized (actionLock) {
 			actionLock.notify();
 		}
+	}
+	
+	public void chatResponse(String msg)
+	{
+		if (null != player) {
+			for (Player playerToNotify : player.getTable().getPlayers().values()) {
+				if (!player.equals(playerToNotify))
+					playerToNotify.getClient().chatReceived(player, msg);
+			}
+			
+			for (User user : player.getTable().getSpectators()) {
+				user.chatReceived(player, msg);
+			}
+		}
+	}
+	
+	@Override
+	public void chatReceived(Player player, String msg)
+	{
+		Map obj = new HashMap();
+		obj.put("name", player.getName());
+		obj.put("msg", msg);
+		client.sendEvent("chat", obj);
 	}
 	
 	public Map getPlayerObjectData(Player player)

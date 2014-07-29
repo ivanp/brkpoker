@@ -23,6 +23,42 @@ body {
     background-color: rgba(255,255,255,0.4);
 }
 
+#board_panel {
+    margin-top:6px;
+    margin-bottom: 6px;
+}
+
+#action_log_container {
+    width: 210px;
+    height: 140px;
+    margin-bottom: 8px;
+}
+
+#action_log_bg {
+    width: 210px;
+    height: 140px;
+    background-color: #000;
+    filter:alpha(opacity=20); /* IE */
+    -moz-opacity:0.2; /* Mozilla */
+    opacity: 0.2; /* CSS3 */
+}
+
+
+#action_log_content {
+    position: absolute;
+    /*left: 0;*/
+    top: 0px;
+    width: 210px;
+    height: 140px;
+    overflow-y: scroll;
+    background: transparent;
+    color: white;
+}
+
+#action_log_content p {
+    margin-bottom: 4px;
+}
+
 .action_buttons button {
     min-width: 108px;
 }
@@ -218,6 +254,8 @@ div.player_box {
 .cover-container {
     margin-right: auto;
     margin-left: auto;
+    /* prevent overlapping with action buttons */
+    margin-bottom: 57px;
 }
 
 /* Padding for spacing */

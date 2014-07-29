@@ -123,6 +123,9 @@ public class Table implements Runnable {
 	protected String message = "";
 	
 	protected boolean showdown = false;
+	
+	protected final int minBuy;
+	protected final int maxBuy;
     
     /**
      * Constructor.
@@ -130,10 +133,12 @@ public class Table implements Runnable {
      * @param bigBlind
      *            The size of the big blind.
      */
-    public Table(String name, TableType type, int bigBlind) {
+    public Table(String name, TableType type, int bigBlind, int minBuy, int maxBuy) {
 		this.name = name;
         this.tableType = type;
         this.bigBlind = bigBlind;
+		this.minBuy = minBuy;
+		this.maxBuy = maxBuy;
         players = new TreeMap<Integer, Player>();
         activePlayers = new ArrayList<Player>();
         deck = new Deck();
@@ -141,6 +146,21 @@ public class Table implements Runnable {
         pots = new ArrayList<Pot>();
 		spectators = new ArrayList<User>();
     }
+	
+	public int getMinBuy()
+	{
+		return minBuy;
+	}
+	
+	public int getMaxBuy()
+	{
+		return maxBuy;
+	}
+	
+	public int getSmallBlind()
+	{
+		return bigBlind / 2;
+	}
 	
 	public String getName()
 	{

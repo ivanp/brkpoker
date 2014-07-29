@@ -18,7 +18,10 @@ public class App
 {
 	public static final int ServerPort = 8082;
 	public static final int TableCount = 1;
-	public static final int BigBlind = 10;
+	
+	public static final int BigBlind = 400;
+	public static final int MinBuy = 200;
+	public static final int MaxBuy = 400;
 	
 	// This is where the tables
 	//public static List<Table> Tables;
@@ -41,7 +44,7 @@ public class App
 			// Table id/name: T001 - TXXX
 			String tbl_name = String.format("T%03d", 
 					tbl_num);
-			Table table = new Table(tbl_name, TableType.FIXED_LIMIT, BigBlind);
+			Table table = new Table(tbl_name, TableType.FIXED_LIMIT, BigBlind, MinBuy, MaxBuy);
 			Tables.put(tbl_name, table);
 			
 			// Create a thread for each table

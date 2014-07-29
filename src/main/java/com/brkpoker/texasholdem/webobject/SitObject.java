@@ -12,48 +12,48 @@ package com.brkpoker.texasholdem.webobject;
  */
 public class SitObject
 {
-	private String tableName;
-	private int seatNum;
-	private int buyIn;
+	private String table;
+	private int num;
+	private int buy;
 	
 	public SitObject()
 	{
 	}
 	
-	public SitObject(String tableName, int seatNum, int buyIn)
+	public SitObject(String table, int num, int buy)
 	{
-		this.tableName = tableName;
-		this.seatNum = seatNum;
-		this.buyIn = buyIn;
+		this.table = table;
+		this.num = num;
+		this.buy = buy;
 	}
 	
-	public String getTableName()
+	public String getTable()
 	{
-		return tableName;
+		return table;
 	}
 	
-	public void setTableName(String tableName)
+	public void setTable(String table)
 	{
-		this.tableName = tableName;
+		this.table = table;
 	}
 	
-	public int getSeatNum()
+	public int getNum()
 	{
-		return seatNum;
+		return num;
 	}
 	
-	public void setSeatNum(int seatNum)
+	public void setNum(int num)
 	{
-		this.seatNum = seatNum;
+		this.num = num;
 	}
 	
-	public int getBuyIn()
+	public int getBuy()
 	{
-		return buyIn;
+		return buy;
 	}
 	
-	public void setBuyIn(int buyIn)
+	public void setBuy(int buy)
 	{
-		this.buyIn = buyIn;
+		this.buy = buy;
 	}
 }

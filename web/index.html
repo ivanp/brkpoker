@@ -51,7 +51,7 @@
     <input id="input_name" type="text" class="form-control input-sm " placeholder="Name" ng-model="name">
   </div>
   <button type="button" class="btn btn-default btn-success btn-sm" ng-show="false">Buy In</button>
-  <button type="button" class="btn btn-default btn-success btn-sm"  ng-show="false">Stand Up</button>
+  <button type="button" class="btn btn-default btn-success btn-sm"  ng-show="is_playing">Stand Up</button>
                         <button type="button" class="btn btn-default btn-success btn-sm"  ng-show="false">Lobby</button>
 </form>
 
@@ -82,7 +82,6 @@
                             <player-panel player="players[2]"></player-panel>
                             
                         </div>
-                        <br/>
                         <div id="board_panel" class="row">
 
                             <div class="col-md-2 col-md-offset-3">
@@ -110,13 +109,13 @@
                             
                             
                         </div>
-                        <br/>
+                       
                         <div class="row">
                             <div class="col-md-6 col-md-offset-3">
                                 <div id="message" class="alert" role="alert">{{message}}</div>
                             </div>
                         </div>
-                        <br/>
+                      
                         <div class="row">
                             
                             <player-panel player="players[7]"></player-panel>
@@ -141,7 +140,19 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-md-2">
-                    <!-- @TODO: Logging -->
+                    <div id="action_log_container">
+                    <div id="action_log_bg"></div>
+                    <div id="action_log_content" class="well well-sm">
+<small>
+                    <p ng-repeat="log in action_logs track by $index">
+                        {{log}}
+                    </p>
+                    
+
+</small>
+<a id="log_bottom"></a>
+    </div>
+                    </div>
                     </div>
                     <div class="col-md-8 text-center">
                         
@@ -198,6 +209,7 @@
         <script src="//cdn.rawgit.com/m-e-conroy/angular-dialog-service/v5.1.1/dialogs.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
         <script src="//cdn.rawgit.com/btford/angular-socket-io/v0.6.0/socket.js"></script>
+        <script src="//cdn.rawgit.com/durated/angular-scroll/v0.6.1/angular-scroll.js"></script>
         <script src="js/app.js"></script>
     </body>
 </html>

@@ -42,17 +42,6 @@ public class SocketService
 		User user = new User(client);
 		user.setName(name);
 		Users.put(client.getSessionId().toString(), user);
-		
-//		// Test sending object
-//		JSONObject obj = new JSONObject();
-//		obj.put("something", "yeah baby");
-//		int[] numbers = {1, 3, 5};
-//		obj.put("numbers", numbers);
-//		JSONObject objChild = new JSONObject();
-//		objChild.put("name", "Bond");
-//		objChild.put("drink", "Martini");
-//		obj.put("agent", objChild);
-//		client.sendEvent("test13", obj);
 	}
 	
 	@OnDisconnect
@@ -110,7 +99,7 @@ public class SocketService
 	@OnEvent("sit")
 	public void onSitHandler(SocketIOClient client, SitObject data, AckRequest ackRequest) 
 	{
-		getUser(client).joinTable(data.getTableName(), data.getSeatNum(), data.getBuyIn());
+		getUser(client).joinTable(data.getTable(), data.getNum(), data.getBuy());
 	}
 	
 	@OnEvent("act")
@@ -124,6 +113,7 @@ public class SocketService
 	{
 		System.out.println("Received request chat");
 		// @TODO: check if user is currently playing, nonspectator & spectator 
+		getUser(client).chatResponse(data);
 		// are not allowed to chat
 		
 	}
