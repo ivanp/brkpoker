@@ -129,6 +129,8 @@ public class Table implements Runnable {
 
 	protected Player smallBlindPlayer;
 	protected Player bigBlindPlayer;
+	
+	protected Map<Integer, Player> removeThesePlayers;
     
     /**
      * Constructor.
@@ -148,6 +150,7 @@ public class Table implements Runnable {
         board = new ArrayList<Card>();
         pots = new ArrayList<Pot>();
 		spectators = new ArrayList<User>();
+		removeThesePlayers = new HashMap();
     }
 	
 	public int getMinBuy()
@@ -250,38 +253,24 @@ public class Table implements Runnable {
 	
 	public void removePlayer(int seatNum)
 	{
-		Player player;
-		synchronized(players) {
-			player = players.remove(seatNum);
-		}
-		
-		for (Player playerToNotify : players.values())
-			playerToNotify.getClient().leavedTable(player);
-		for (User user : spectators) {
-			user.leavedTable(player);
+		synchronized(this) {
+			Player player = players.get(seatNum);
+			if (null != player)
+				removeThesePlayers.put(seatNum, player);
 		}
 	}
 	
 	public void removePlayer(Player player)
 	{
-		int seatNum = 0;
-		synchronized(players) {
+		synchronized(this) {
 			for (Map.Entry<Integer, Player> entry : players.entrySet())
 			{
 				if (entry.getValue().equals(player)) 
 				{
-					seatNum = entry.getKey();
-					players.remove(entry.getKey());
+					int seatNum = entry.getKey();
+					removeThesePlayers.put(seatNum, player);
 					break;
 				}
-			}
-		}
-		
-		if (seatNum > 0) {
-			for (Player playerToNotify : players.values())
-				playerToNotify.getClient().leavedTable(player);
-			for (User user : spectators) {
-				user.leavedTable(player);
 			}
 		}
 	}
@@ -355,6 +344,7 @@ public class Table implements Runnable {
 //			smallBlindPosition = -1;
 //			bigBlindPosition = -1;
 			while (true) {
+				checkForRemovedPlayers();
 				int noOfActivePlayers = 0;
 				for (Player player : players.values()) {
 					if (player.getCash() >= bigBlind) {
@@ -379,6 +369,11 @@ public class Table implements Runnable {
 			}
 			notifyPlayersUpdated(false);
 			notifyMessage("Waiting for players");
+			
+			// Clear the panel for this lonely player
+			for (Player player : players.values()) {
+				player.getClient().playerUpdated(player);
+			}
 		
 			synchronized(waitForPlayerLock) {
 				try
@@ -393,7 +388,29 @@ public class Table implements Runnable {
 			}
 		}
     }
-    
+	
+	private void checkForRemovedPlayers() {
+		// Check for removed players
+		List<Player> removedPlayers = new ArrayList<Player>();
+		synchronized (this) {
+			for (Map.Entry<Integer, Player> entry : removeThesePlayers.entrySet()) {
+				int seatNum = entry.getKey();
+				Player player = entry.getValue();
+				removeThesePlayers.remove(seatNum);
+				players.remove(seatNum);
+				removedPlayers.add(player);
+			}
+		}
+		
+		// Notify players and spectators
+		for (Player removedPlayer : removedPlayers) {
+			for (Player playerToNotify : players.values()) 
+				playerToNotify.getClient().leavedTable(removedPlayer);
+			for (User user : spectators)
+				user.leavedTable(removedPlayer);
+		}
+	}
+	
     /**
      * Plays a single hand.
      */

@@ -33,6 +33,7 @@ public class User implements org.ozsoft.texasholdem.Client
 	private Action lastAction;
 	private Object actionLock = new Object();
 	private Table watchingTable;
+	private boolean disconnected = false;
 			
 	public User(SocketIOClient client)
 	{
@@ -63,7 +64,13 @@ public class User implements org.ozsoft.texasholdem.Client
 	
 	public void disconnect()
 	{
+		this.disconnected = true;
 		gotoLobby();
+	}
+	
+	public boolean isDisconnected()
+	{
+		return disconnected;
 	}
 	
 	public void watchTable(Table table)
@@ -106,7 +113,11 @@ public class User implements org.ozsoft.texasholdem.Client
 		obj.put("showdown", table.getIsShowdown());
 		// Current actor
 		obj.put("actor", table.getActorSeatNum());
-		obj.put("cards", getCardHash(table.getBoard()));
+		List cards = getCardHash(table.getBoard());
+		for (int i = cards.size(); i < 5; i++) {
+			cards.add(null);
+		}
+		obj.put("cards", cards);
 		
 		List players = new ArrayList();
 		for (Player player : table.getPlayers().values())
@@ -125,6 +136,9 @@ public class User implements org.ozsoft.texasholdem.Client
 		}
 		if (null != player)
 		{
+			// If player still in table, set default action to fold
+			actResponse(Action.FOLD);
+			
 			player.getTable().removePlayer(player);
 			player = null;
 		}
@@ -203,6 +217,9 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void messageReceived(String message)
 	{
+		if (disconnected)
+			return;
+		
 		client.sendEvent("msg", message);
 	}
 
@@ -218,6 +235,9 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void joinedTable(TableType type, int bigBlind, int seatNum, Player player)
 	{
+		if (disconnected)
+			return;
+		
 		Map obj = new HashMap();
 		obj.put("num", seatNum);
 		obj.put("name", player.getName());
@@ -233,6 +253,9 @@ public class User implements org.ozsoft.texasholdem.Client
 	
 	public void leavedTable(Player player)
 	{
+		if (disconnected)
+			return;
+		
 		// player:leave
 		Map obj = new HashMap();
 		obj.put("num", player.getSeatNum());
@@ -248,6 +271,9 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void handStarted(Player dealer)
 	{
+		if (disconnected)
+			return;
+		
 		// game:start
 		Map obj = new HashMap();
 		obj.put("num", dealer.getSeatNum());
@@ -262,6 +288,9 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void actorRotated(Player actor)
 	{
+		if (disconnected)
+			return;
+		
 		// game:rotate
 		Map obj = new HashMap();
 		obj.put("num", actor.getSeatNum());
@@ -276,6 +305,9 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void playerUpdated(Player player)
 	{
+		if (disconnected)
+			return;
+		
 		Map obj = getPlayerObjectData(player);
 		client.sendEvent("player:update", obj);
 	}
@@ -292,11 +324,18 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void boardUpdated(List<Card> cards, int bet, int pot)
 	{
+		if (disconnected)
+			return;
+		
 		// game:update
 		Map obj = new HashMap();
 		obj.put("bet", bet);
 		obj.put("pot", pot);
-		obj.put("cards", getCardHash(cards));
+		List cardInts = getCardHash(cards);
+		for (int i = cards.size(); i < 5; i++) {
+			cardInts.add(null);
+		}
+		obj.put("cards", cardInts);
 		client.sendEvent("game:update", obj);
 	}
     
@@ -308,6 +347,9 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public void playerActed(Player player)
 	{
+		if (disconnected)
+			return;
+		
 		// player:act
 		Map obj = new HashMap();
 		obj.put("num", player.getSeatNum());
@@ -339,6 +381,18 @@ public class User implements org.ozsoft.texasholdem.Client
      */
     public Action act(int minBet, int currentBet, Set<Action> allowedActions)
 	{
+		if (disconnected)
+		{
+			try
+			{
+				Thread.sleep(1000);
+			}
+			catch (InterruptedException e)
+			{
+			}
+			return Action.FOLD;
+		}
+		
 		Map obj = new HashMap();
 		obj.put("min", minBet);
 		obj.put("bet", currentBet);
@@ -367,6 +421,9 @@ public class User implements org.ozsoft.texasholdem.Client
 	@Override
 	public void playerWon(Player player, int amount)
 	{
+		if (disconnected)
+			return;
+		
 		Map obj = new HashMap();
 		obj.put("num", player.getSeatNum());
 		obj.put("cash", player.getCash());
@@ -404,10 +461,11 @@ public class User implements org.ozsoft.texasholdem.Client
 		
 			for (Player playerToNotify : watchingTable.getPlayers().values()) {
 				User user = (User)playerToNotify.getClient();
-				user.getSocket().sendEvent("chat", obj);
+				if (!user.isDisconnected())
+					user.getSocket().sendEvent("chat", obj);
 			}
 			for (User user : watchingTable.getSpectators())
-				if (!user.equals(this))
+				if (!user.isDisconnected() && !user.equals(this))
 					user.getSocket().sendEvent("chat", obj);
 		}
 	}
@@ -415,6 +473,8 @@ public class User implements org.ozsoft.texasholdem.Client
 	@Override
 	public void chatReceived(Player player, String msg)
 	{
+		if (disconnected)
+			return;
 		Map obj = new HashMap();
 		obj.put("name", player.getName());
 		obj.put("msg", msg);
@@ -444,8 +504,15 @@ public class User implements org.ozsoft.texasholdem.Client
 		obj.put("is_turn", (seatNum == table.getActorSeatNum()));
 		obj.put("is_dealer", (seatNum == table.getDealerSeatNum()));
 		if (player.hasCards()) {
+			if (player.getCards().length == 0) {
+				int[] backs = {-1, -1};
+				obj.put("cards", backs);
+			} else
 			obj.put("cards", getCardHash(
 					player.getCards()));
+		} else {
+			Object[] nulls = {null, null};
+			obj.put("cards", nulls);
 		}
 			
 		return obj;

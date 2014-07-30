@@ -52,11 +52,11 @@ public class SocketService
 	{
 		System.out.println("Client: "+client.getSessionId().toString()+" disconnected");
 		
-		User user = Users.get(client.getSessionId().toString());
-		user.disconnect();
-		Users.remove(client.getSessionId().toString());
-		//Users.remove(client.getSessionId().toString());
-		// @TODO: remove from spectators & remove player gracefully
+		synchronized (Users) {
+			User user = Users.get(client.getSessionId().toString());
+			user.disconnect();
+			Users.remove(client.getSessionId().toString());
+		}
 	}
 	
 	@OnEvent("set:name")
