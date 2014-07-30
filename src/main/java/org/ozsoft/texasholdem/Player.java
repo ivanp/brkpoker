@@ -283,7 +283,7 @@ public class Player {
      * @return The cloned player.
      */
     public Player publicClone() {
-        Player clone = new Player(seatNum, name, cash, null, table);
+        Player clone = new Player(seatNum, name, cash, client, table);
         clone.hasCards = hasCards;
         clone.bet = bet;
         clone.action = action;

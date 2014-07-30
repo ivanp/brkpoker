@@ -282,17 +282,17 @@ public class Table implements Runnable {
 	
 	public Map<Integer, Player> getPlayers()
 	{
-		Map<Integer, Player> players = new TreeMap<Integer, Player>();
+		Map<Integer, Player> copyPlayers = new TreeMap<Integer, Player>();
 		for (Map.Entry<Integer, Player> entry : players.entrySet())
 		{
 			if (showdown) {
-				players.put(entry.getKey(), entry.getValue());
+				copyPlayers.put(entry.getKey(), entry.getValue());
 			} else {
 				// Hide secret information to other players.
-				players.put(entry.getKey(), entry.getValue().publicClone());
+				copyPlayers.put(entry.getKey(), entry.getValue().publicClone());
 			}
 		}
-		return players;
+		return copyPlayers;
 	}
 	
 	public List<User> getSpectators()

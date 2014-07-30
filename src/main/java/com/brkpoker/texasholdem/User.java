@@ -9,6 +9,7 @@ package com.brkpoker.texasholdem;
 import static com.brkpoker.texasholdem.App.Tables;
 import com.corundumstudio.socketio.SocketIOClient;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,6 @@ import org.ozsoft.texasholdem.Player;
 import org.ozsoft.texasholdem.Table;
 import org.ozsoft.texasholdem.TableType;
 import org.ozsoft.texasholdem.actions.Action;
-import org.ozsoft.texasholdem.Client;
 
 /**
  *
@@ -131,11 +131,13 @@ public class User implements org.ozsoft.texasholdem.Client
 	{
 		if (null != watchingTable) 
 		{
+			System.out.printf("Removing user %s from spectator in table %s\n", name, watchingTable.getName());
 			watchingTable.removeSpectator(this);
 			watchingTable = null;
 		}
 		if (null != player)
 		{
+			System.out.printf("Removing user %s from player in table %s\n", name, player.getTable().getName());
 			// If player still in table, set default action to fold
 			actResponse(Action.FOLD);
 			
@@ -185,6 +187,7 @@ public class User implements org.ozsoft.texasholdem.Client
 		finally
 		{
 			if (!table.isPlaying(player)) {
+				System.out.printf("Player %s was not failed to enter the table, removing\n", player.getName());
 				cash += player.getCash();
 				player = null;
 			}
@@ -446,27 +449,10 @@ public class User implements org.ozsoft.texasholdem.Client
 	{
 		if (null != player) {
 			for (Player playerToNotify : player.getTable().getPlayers().values()) {
-				if (!player.equals(playerToNotify))
+				if (!player.getClient().equals(playerToNotify.getClient())) {
 					playerToNotify.getClient().chatReceived(player, msg);
+				}
 			}
-			
-			for (User user : player.getTable().getSpectators()) {
-				user.chatReceived(player, msg);
-			}
-		} else if (null != watchingTable) {
-			
-			Map obj = new HashMap();
-			obj.put("name", name);
-			obj.put("msg", msg);
-		
-			for (Player playerToNotify : watchingTable.getPlayers().values()) {
-				User user = (User)playerToNotify.getClient();
-				if (!user.isDisconnected())
-					user.getSocket().sendEvent("chat", obj);
-			}
-			for (User user : watchingTable.getSpectators())
-				if (!user.isDisconnected() && !user.equals(this))
-					user.getSocket().sendEvent("chat", obj);
 		}
 	}
 	
@@ -475,6 +461,7 @@ public class User implements org.ozsoft.texasholdem.Client
 	{
 		if (disconnected)
 			return;
+		
 		Map obj = new HashMap();
 		obj.put("name", player.getName());
 		obj.put("msg", msg);
