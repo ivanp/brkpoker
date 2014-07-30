@@ -55,7 +55,7 @@
 </form>
 
                         <p class="navbar-text navbar-right">
-                            <span class="badge">Chips: <span id="cash">{{cash|number}}</span></span>
+                            <span class="badge">Chips: <span id="cash" ng-bind="cash|number"></span></span>
                             <span class="badge">Table: {{table}}</span>
                             <span class="badge">Min/Max: {{min|number}}/{{max|number}}</span>
                             <span class="badge">Small/Big: {{small|number}}/{{big|number}}</span>

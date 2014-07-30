@@ -64,7 +64,7 @@ public class Table implements Runnable {
     protected static final int MAX_RAISES = 3;
     
     /** Whether players will always call the showdown, or fold when no chance. */
-    protected static final boolean ALWAYS_CALL_SHOWDOWN = false;
+    protected static final boolean ALWAYS_CALL_SHOWDOWN = true;
 	
 	protected final int sleepBetweenStage = 2000;
 	
@@ -283,13 +283,15 @@ public class Table implements Runnable {
 	public Map<Integer, Player> getPlayers()
 	{
 		Map<Integer, Player> copyPlayers = new TreeMap<Integer, Player>();
-		for (Map.Entry<Integer, Player> entry : players.entrySet())
-		{
-			if (showdown) {
-				copyPlayers.put(entry.getKey(), entry.getValue());
-			} else {
-				// Hide secret information to other players.
-				copyPlayers.put(entry.getKey(), entry.getValue().publicClone());
+		synchronized(players) {
+			for (Map.Entry<Integer, Player> entry : players.entrySet())
+			{
+				if (showdown) {
+					copyPlayers.put(entry.getKey(), entry.getValue());
+				} else {
+					// Hide secret information to other players.
+					copyPlayers.put(entry.getKey(), entry.getValue().publicClone());
+				}
 			}
 		}
 		return copyPlayers;
@@ -324,13 +326,18 @@ public class Table implements Runnable {
 	{
 		try 
 		{
-			if (ms < -1)
+			if (ms < 0)
 				ms = sleepBetweenStage;
 			Thread.sleep(sleepBetweenStage);
 		} 
 		catch (InterruptedException e)
 		{
 		}
+	}
+	
+	protected void sleep()
+	{
+		sleep(-1);
 	}
 	
     /**
@@ -396,10 +403,10 @@ public class Table implements Runnable {
 			for (Map.Entry<Integer, Player> entry : removeThesePlayers.entrySet()) {
 				int seatNum = entry.getKey();
 				Player player = entry.getValue();
-				removeThesePlayers.remove(seatNum);
 				players.remove(seatNum);
 				removedPlayers.add(player);
 			}
+			removeThesePlayers.clear();
 		}
 		
 		// Notify players and spectators
@@ -422,13 +429,16 @@ public class Table implements Runnable {
             rotateActor();
         }
         postSmallBlind();
+		sleep(500);
         
         // Big blind.
         rotateActor();
         postBigBlind();
+		sleep(500);
         
         // Pre-Flop.
         dealHoleCards();
+		sleep();
         doBettingRound();
         
         // Flop.
@@ -436,6 +446,7 @@ public class Table implements Runnable {
             bet = 0;
             dealCommunityCards("Flop", 3);
             minBet = bigBlind;
+			sleep();
             doBettingRound();
 
             // Turn.
@@ -447,6 +458,7 @@ public class Table implements Runnable {
                 } else {
                     minBet = bigBlind;
                 }
+				sleep();
                 doBettingRound();
 
                 // River.
@@ -458,6 +470,7 @@ public class Table implements Runnable {
                     } else {
                         minBet = bigBlind;
                     }
+					sleep();
                     doBettingRound();
 
                     // Showdown.
@@ -470,7 +483,7 @@ public class Table implements Runnable {
             }
         }
 		
-		sleep(3000);
+		sleep(5000);
     }
     
     /**
@@ -855,6 +868,7 @@ public class Table implements Runnable {
                     player.getClient().playerUpdated(playerToShow);
                 }
                 notifyMessage("%s has %s.", playerToShow, handValue.getDescription());
+				sleep(3000);
             } else {
                 // Fold.
                 playerToShow.setCards(null);
@@ -868,9 +882,10 @@ public class Table implements Runnable {
                     }
                 }
                 notifyMessage("%s folds.", playerToShow);
+				sleep(1000);
             }
         }
-        
+		
         // Sort players by hand value (highest to lowest).
         Map<HandValue, List<Player>> rankedPlayers = new TreeMap<HandValue, List<Player>>();
         for (Player player : activePlayers) {
@@ -952,6 +967,7 @@ public class Table implements Runnable {
         }
         winnerText.append('.');
         notifyMessage(winnerText.toString());
+		sleep(5000);
         
         // Sanity check.
         if (totalWon != totalPot) {

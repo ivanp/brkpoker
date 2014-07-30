@@ -78,6 +78,7 @@
         $scope.chat_line = "";
         $scope.name = "";
         $scope.is_debug = false;
+	$scope.cash = 0; // player chips
         
         // Access players from getPlayer(seat_num)
         $scope.players = [null];
@@ -159,6 +160,8 @@
 
             $scope.name = data.name;
             $scope.cash = data.cash;
+	    
+	    console.log("Name: "+data.name+", cash: $"+data.cash);
 
             // @TODO: Get tables and list in a modal
             socket.emit('watch', 'T001');
@@ -354,6 +357,12 @@
 
             addActionLog("Player "+player.name+" wins "+data.amount);
         });
+	
+	socket.on('cash', function(data) {
+            $scope.cash = data;
+
+            addActionLog("Updated cash: $"+data);
+        });
 
         socket.on('chat', function(data) {
             newChatMsg(data.name, data.msg);
@@ -501,7 +510,6 @@
             $scope.is_action = false;
             $scope.mode = ""; // "play" or "watch"
             $scope.message = "";
-            $scope.cash = 0; // player chips
             $scope.min = 0;
             $scope.max = 0;
             $scope.small = 0;

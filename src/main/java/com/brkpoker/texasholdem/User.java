@@ -148,48 +148,52 @@ public class User implements org.ozsoft.texasholdem.Client
 	
 	public void joinTable(Table table, int seatNum, int buyin) 
 	{
-		if (buyin > cash)
-		{
-			client.sendEvent("error", "Player don't have enough cash to play");
-			return;
-		}
-		else if (null != player)
-		{
-			// Only allow to play on a table
-			player.getTable().removePlayer(player);
-			cash += player.getCash();
-			player = null;
-		}
-		
-		cash -= buyin;
-		player = new Player(seatNum, name, buyin, this, table);
-		try
-		{
-			table.addPlayer(seatNum, player);
-			table.removeSpectator(this);
-			watchingTable = null;
-			System.out.printf("Successfully joined table: %s at seat %d\n", table.getName(), seatNum);
-			// Confirm client
-			client.sendEvent("sit", getPlayerObjectData(player));
-		}
-		catch (Table.InvalidSeatException e)
-		{
-			client.sendEvent("error", "Invalid seat number: "+seatNum);
-		}
-		catch (Table.SeatAlreadyOccupiedException e)
-		{
-			client.sendEvent("error", "Seat already occupied: "+seatNum);
-		}
-		catch (Table.PlayerNotEnoughCashException e)
-		{
-			client.sendEvent("error", "Player don't have enough buyin to play");
-		}
-		finally
-		{
-			if (!table.isPlaying(player)) {
-				System.out.printf("Player %s was not failed to enter the table, removing\n", player.getName());
-				cash += player.getCash();
+		synchronized(this) {
+			if (buyin > cash)
+			{
+				client.sendEvent("error", "Player don't have enough cash to play");
+				return;
+			}
+			else if (null != player)
+			{
+				// Only allow to play on a table
+				player.getTable().removePlayer(player);
+				doCash(player.getCash());
 				player = null;
+			}
+
+			Player newPlayer = null;
+			try
+			{
+				doCash(-buyin);
+				newPlayer = new Player(seatNum, name, buyin, this, table);
+				table.addPlayer(seatNum, newPlayer);
+				table.removeSpectator(this);
+				player = newPlayer;
+				watchingTable = null;
+				System.out.printf("Successfully joined table: %s at seat %d\n", table.getName(), seatNum);
+				// Confirm client
+				client.sendEvent("sit", getPlayerObjectData(player));
+			}
+			catch (Table.InvalidSeatException e)
+			{
+				client.sendEvent("error", "Invalid seat number: "+seatNum);
+			}
+			catch (Table.SeatAlreadyOccupiedException e)
+			{
+				client.sendEvent("error", "Seat already occupied: "+seatNum);
+			}
+			catch (Table.PlayerNotEnoughCashException e)
+			{
+				client.sendEvent("error", "Player don't have enough buyin to play");
+			}
+			finally
+			{
+				if (null == newPlayer) {
+					System.out.printf("Player %s was failed to enter the table, removing\n", player.getName());
+					doCash(player.getCash());
+					player = null;
+				}
 			}
 		}
 	}
@@ -211,6 +215,16 @@ public class User implements org.ozsoft.texasholdem.Client
 	{
 		return cash;
 	}
+	
+	protected int doCash(int amount) 
+	{
+		cash += amount;
+		
+		if (!disconnected)
+			client.sendEvent("cash", cash);
+		
+		return cash;
+	} 
 	
 	/**
      * Handles a game message.
@@ -481,7 +495,7 @@ public class User implements org.ozsoft.texasholdem.Client
 		Action action = player.getAction();
 		String last_action = "";
 		if (action != null)
-			last_action = player.getAction().toString().toLowerCase();
+			last_action = action.toString().toLowerCase();
 		obj.put("last_action", last_action);
 		obj.put("bet", player.getBet());
 		obj.put("is_available", false);
