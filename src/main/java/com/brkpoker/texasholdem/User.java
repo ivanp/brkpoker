@@ -79,7 +79,7 @@ public class User implements org.ozsoft.texasholdem.Client
 		table.addSpectator(this);
 		watchingTable = table;
 		
-		client.sendEvent("watch", table.getName());
+		client.sendEvent("watching", table.getName());
 		repaintTable(table);
 	}
 	

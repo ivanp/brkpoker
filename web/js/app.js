@@ -31,34 +31,39 @@
     var BrkPokerApp = angular.module('brkPokerApp', [
         'ui.bootstrap', 
         'dialogs.main', 
-        'btford.socket-io',
         'duScroll'
-        // 'ui.slider'
     ]);
     
-    BrkPokerApp.factory('socket', function (socketFactory) {
-        var socket = io.connect('//' + window.location.host + '?authid=abc', {
-            'try multiple transports' : false,
-            'reconnection limit' : 5000,
-            'reconnection delay' : 2000
+    BrkPokerApp.factory('socket', function ($rootScope) {
+        var socket = io({ 
+            forceNew: true, 
+            autoConnect: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 8000,
+            query: {authid: "test123"}
         });
-                
-        // The library will stopped on first 50x http request
-        // this hack will force it to reconnect.
-        socket.on('error', function(err) {
-            if (!socket.socket.reconnecting) {
-                socket.socket.options['max reconnection attempts'] = Infinity;
-                socket.socket.reconnect();
+        
+        return {
+            on: function(eventName, callback) {
+                socket.on(eventName, function() {
+                    var args = arguments;
+                    $rootScope.$apply(function() {
+                        callback.apply(socket, args);
+                    });
+                });
+            },
+            emit: function(eventName, data, callback) {
+                socket.emit(eventName, data, function() {
+                    var args = arguments;
+                    $rootScope.$apply(function() {
+                        if (callback) {
+                            callback.apply(socket, args);
+                        }
+                    });
+                })
             }
-        });
-        
-        socket.on('reconnecting', function(delay, attempts) {
-//            console.log('Reconnecting attempt #'+attempts+', delay for '+delay+'ms');
-        });
-        
-        return socketFactory({
-            ioSocket: socket
-        });
+        }; 
     })
     
     BrkPokerApp.controller('MainController', function(
@@ -164,7 +169,7 @@
 	    console.log("Name: "+data.name+", cash: $"+data.cash);
 
             // @TODO: Get tables and list in a modal
-            socket.emit('watch', 'T001');
+            socket.emit('watchreq', 'T001');
         });
         
         
@@ -172,7 +177,7 @@
          * Watching/spectating a table, along with
          * table information
          */
-        socket.on('watch', function(data) {
+        socket.on('watching', function(data) {
             $rootScope.$broadcast('dialogs.wait.progress',
                 {'progress' : 90, 
                 'msg': 'Joined table '+data+'. Receiving table stream.'});

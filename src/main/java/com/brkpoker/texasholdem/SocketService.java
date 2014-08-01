@@ -86,7 +86,7 @@ public class SocketService
 	 * @param data
 	 * @param ackRequest 
 	 */
-	@OnEvent("watch")
+	@OnEvent("watchreq")
 	public void onWatchHandler(SocketIOClient client, String data, AckRequest ackRequest) 
 	{
 		System.out.printf("Watching table: %s\n", data);
