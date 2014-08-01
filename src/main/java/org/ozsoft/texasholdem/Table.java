@@ -967,7 +967,7 @@ public class Table implements Runnable {
         }
         winnerText.append('.');
         notifyMessage(winnerText.toString());
-		sleep(5000);
+		sleep(10000);
         
         // Sanity check.
         if (totalWon != totalPot) {

@@ -1,7 +1,5 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * @author Ivan
  */
 
 package com.brkpoker.texasholdem;
@@ -113,7 +111,7 @@ public class User implements org.ozsoft.texasholdem.Client
 		obj.put("showdown", table.getIsShowdown());
 		// Current actor
 		obj.put("actor", table.getActorSeatNum());
-		List cards = getCardHash(table.getBoard());
+		List cards = getCardIntVal(table.getBoard());
 		for (int i = cards.size(); i < 5; i++) {
 			cards.add(null);
 		}
@@ -348,7 +346,7 @@ public class User implements org.ozsoft.texasholdem.Client
 		Map obj = new HashMap();
 		obj.put("bet", bet);
 		obj.put("pot", pot);
-		List cardInts = getCardHash(cards);
+		List cardInts = getCardIntVal(cards);
 		for (int i = cards.size(); i < 5; i++) {
 			cardInts.add(null);
 		}
@@ -509,7 +507,7 @@ public class User implements org.ozsoft.texasholdem.Client
 				int[] backs = {-1, -1};
 				obj.put("cards", backs);
 			} else
-			obj.put("cards", getCardHash(
+			obj.put("cards", User.this.getCardIntVal(
 					player.getCards()));
 		} else {
 			Object[] nulls = {null, null};
@@ -519,20 +517,20 @@ public class User implements org.ozsoft.texasholdem.Client
 		return obj;
 	}
 	
-	public List getCardHash(Card[] cards)
+	public List getCardIntVal(Card[] cards)
 	{
-		List hash = new ArrayList();
+		List ints = new ArrayList();
 		for (Card card : cards) 
-			hash.add(card.hashCode());
-		return hash;
+			ints.add(card.getSuit() * Card.NO_OF_RANKS + card.getRank());
+		return ints;
 	}
 	
-	public List getCardHash(List<Card> cards)
+	public List getCardIntVal(List<Card> cards)
 	{
-		List hash = new ArrayList();
+		List ints = new ArrayList();
 		for (Card card : cards) 
-			hash.add(card.hashCode());
-		return hash;
+			ints.add(card.getSuit() * Card.NO_OF_RANKS + card.getRank());
+		return ints;
 	}
 	
 	public class NotEnoughCashException extends Exception
